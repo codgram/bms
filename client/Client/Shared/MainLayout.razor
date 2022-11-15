@@ -1,0 +1,104 @@
+﻿@inherits LayoutComponentBase
+@inject HttpClient _client
+@inject NavigationManager _navigationManager
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@inject StateContainer _stateContainer
+@attribute [Authorize]
+
+<div class="page bg-light">
+    <div class="sidebar bg-white border border-right">
+        <NavMenu CompanyName='@(Company is null ? "" : Company.Code.ToUpper())'/>
+    </div>
+
+    <main>
+        <div class="top-row bg-white px-4 auth">
+            <LoginDisplay />
+        </div>
+
+        <div class="d-flex justify-content-end m-3">
+            <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#companyModal">
+                @(_stateContainer.Company is not null ? @_stateContainer.Company.Name : "Choose company")
+            </button>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="companyModal" tabindex="-1" aria-labelledby="companyModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="companyModalLabel">Choose company</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+            @if(Companies is not null)
+            {
+                foreach (var company in Companies)
+                {
+                    if(company == Company)
+                    {
+                        <li class="list-group-item active" aria-current="true" data-bs-dismiss="modal" @onclick="@(() => ChooseCompany(company))">@company.Code - @company.Name</li>
+                    }
+                    else
+                    {
+                        <li class="list-group-item" data-bs-dismiss="modal" @onclick="@(() => ChooseCompany(company))">@company.Code - @company.Name</li>
+                    }
+                }
+            }
+          
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<MudThemeProvider/>
+<MudSnackbarProvider/>
+
+
+@code
+{
+    private List<Company> Companies { get; set; }
+    private Company Company { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Companies = await _client.GetFromJsonAsync<List<Company>>("api/companies");
+            Company = Companies.FirstOrDefault(c => c.IsDefault == true);
+
+            if(Company is not null)
+            {
+                _stateContainer.Company = Company;
+
+                // notify state
+                @* _stateContainer.OnChange += StateHasChanged; *@
+            }
+        }
+        catch (AccessTokenNotAvailableException exception)
+        {
+            exception.Redirect();
+        }
+
+        _stateContainer.OnChange += StateHasChanged;
+        
+        
+    }
+
+    private void ChooseCompany(Company company)
+    {
+        _stateContainer.Company = company;
+        @* _navigationManager.NavigateTo($"{company}"); *@
+    }
+}

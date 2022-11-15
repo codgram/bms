@@ -1,0 +1,118 @@
+@page "/works/custom/headers"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Identity
+@inject HttpClient _client
+@inject IJSRuntime _jsRuntime
+@inject ISnackbar Snackbar
+@inject NavigationManager _navigationManager
+
+<PageTitle>Custom Wokr Headers</PageTitle>
+
+<h4 class="mt-5">Custom Work Headers</h4>
+
+<MudPaper Elevation="25" Class="mb-2 mt-4">
+    <MudToolBar>
+        <MudText>
+            <Navigation />
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick='@(() => Navigate("works/custom/headers/add"))' />
+        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+    </MudToolBar>
+</MudPaper>
+
+<MudTable Items="@CustomWorkHeaders" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<CustomWorkHeader,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Custom Work Headers</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Document No</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="DocumentNo">@context.DocumentNo</MudTd>
+        <MudTd DataLabel="Status">@context.Status</MudTd>
+        <MudTd DataLabel="Action" Class="text-end">
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.OpenInNew" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/details"))'/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/edit"))'/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<div class="d-flex flex-wrap mt-4">
+    <div style="min-width:200px;">
+        <MudText Inline="true" Class="align-self-center">Selected1: @selectedItem1?.DocumentNo</MudText>
+    </div>
+</div>
+
+
+
+@code {
+    private bool dense = false;
+    private bool hover = true;
+    private bool striped = false;
+    private bool bordered = false;
+    private string searchString1 = "";
+    private CustomWorkHeader selectedItem1 = null;
+    private HashSet<CustomWorkHeader> selectedItems = new HashSet<CustomWorkHeader>();
+
+    private List<CustomWorkHeader> CustomWorkHeaders = new List<CustomWorkHeader>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        CustomWorkHeaders = await _client.GetFromJsonAsync<List<CustomWorkHeader>>("api/works/custom/headers");
+    }
+
+    private bool FilterFunc1(CustomWorkHeader CustomWorkHeader) => FilterFunc(CustomWorkHeader, searchString1);
+
+    private bool FilterFunc(CustomWorkHeader CustomWorkHeader, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (CustomWorkHeader.DocumentNo.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private async void OnDeleteAsync(string id)
+    {
+        // prompt the user to confirm
+        var confirmResult = await _jsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this work?");
+            var customWorkHeader = CustomWorkHeaders.FirstOrDefault(j => j.Id == id);
+
+        if(confirmResult) {
+            var request = await _client.DeleteAsync($"api/works/custom/headers/{id}");
+
+            if(request.IsSuccessStatusCode) {
+                Snackbar.Add($"Custom Work {customWorkHeader.DocumentNo} is deleted", Severity.Success);
+                CustomWorkHeaders.Remove(customWorkHeader);
+                StateHasChanged();
+            }
+            else {
+                Snackbar.Add($"Work Header is not deleted", Severity.Error);
+            }
+        }
+        else {
+            Snackbar.Add($"Operation was canceled", Severity.Info);
+        }
+        
+    }
+
+    private async void PostWorkHeaderAsync()
+    {
+
+    }
+
+
+    private void Navigate(string url)
+    {
+        _navigationManager.NavigateTo(url);
+    }
+}

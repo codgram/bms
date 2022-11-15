@@ -1,0 +1,132 @@
+@page "/works/custom/headers/{customWorkHeaderId}/details"
+@using Microsoft.AspNetCore.Identity
+@inject ISnackbar Snackbar
+@inject IJSRuntime _jsRuntime
+@inject HttpClient _client
+@inject NavigationManager _navigationManager
+@inject StateContainer _stateContainer
+@using System.Text
+@* @attribute [Authorize(Roles = "Owner, Admin")] *@
+
+<PageTitle>Custom Works - Edit</PageTitle>
+
+<h4 class="mt-5">Edit Work</h4>
+<MudPaper Elevation="25" Class="mb-2 mt-4">
+    <MudToolBar>
+        <MudText>
+            <Navigation />
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+    </MudToolBar>
+</MudPaper>
+
+
+<MudPaper Elevation="25" Class="mb-2 mt-4 p-5">
+    <EditForm Model="@CustomWorkHeader" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInValidSubmit">
+        <DataAnnotationsValidator/>
+
+        <MudTextField Disabled="true" Label="Document No" @bind-Value="CustomWorkHeader.DocumentNo" For="@(() => CustomWorkHeader.DocumentNo)" />
+            
+        <MudCardActions>
+            <MudButton OnClick="ExportAsync" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Export</MudButton>
+        </MudCardActions>
+    </EditForm>
+</MudPaper>
+
+
+<MudTable Items="@CustomWorkLines" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<CustomWorkLine,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Custom Work Lines</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Barcode No</MudTh>
+        <MudTh>Expiry Date</MudTh>
+        <MudTh>Quantity</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="BarcodeNo">@context.BarcodeNo</MudTd>
+        <MudTd DataLabel="ExpiryDate">@context.ExpiryDate.ToString("dd/MM/yyyy")</MudTd>
+        <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+        <MudTd DataLabel="Action" Class="text-end">
+            @* <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/edit"))'/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" /> *@
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+
+@code {
+
+    [Parameter] public string customWorkHeaderId { get; set; }
+
+    private bool dense = false;
+    private bool hover = true;
+    private bool striped = false;
+    private bool bordered = false;
+    private string searchString1 = "";
+    private CustomWorkLine selectedItem1 = null;
+
+    private CustomWorkHeader CustomWorkHeader = new CustomWorkHeader();
+
+    private List<CustomWorkLine> CustomWorkLines { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CustomWorkHeader = await _client.GetFromJsonAsync<CustomWorkHeader>($"api/works/custom/headers/{customWorkHeaderId}");
+            
+        if(CustomWorkHeader is not null)
+        {
+            CustomWorkLines = await _client.GetFromJsonAsync<List<CustomWorkLine>>($"api/works/custom/lines/filter?companyId={CustomWorkHeader.CompanyId}&customWorkHeaderId={CustomWorkHeader.Id}");
+        }
+    }
+
+    private bool FilterFunc1(CustomWorkLine CustomWorkLine) => FilterFunc(CustomWorkLine, searchString1);
+
+    private bool FilterFunc(CustomWorkLine CustomWorkLine, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (CustomWorkLine.BarcodeNo.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+    private async Task OnValidSubmit() 
+    {
+        CustomWorkHeader.CompanyId = _stateContainer.Company.Id;
+        Console.WriteLine($"CustomWorkHeader: {CustomWorkHeader.CompanyId}");
+
+        var response = await _client.PostAsJsonAsync($"/api/works/custom/headers", CustomWorkHeader);
+
+        if(response.IsSuccessStatusCode)
+        {
+            Snackbar.Add($"New Work is created", Severity.Success);
+            _navigationManager.NavigateTo($"works/custom/headers");
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Snackbar.Add($"{error}", Severity.Error);
+            
+        }
+    }
+
+
+    private void OnInValidSubmit() 
+    {
+        Snackbar.Add($"Please make sure to fill all necessary data!", Severity.Error);
+
+    }
+
+    public async void ExportAsync()
+    {
+        _navigationManager.NavigateTo($"api/works/custom/lines/export/csv?customWorkHeaderId={CustomWorkHeader.Id}", true);
+    }
+}

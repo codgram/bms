@@ -1,0 +1,206 @@
+@page "/admin/users/{Id}/edit"
+@using Microsoft.AspNetCore.Identity
+@inject ISnackbar Snackbar
+@inject IJSRuntime _jsRuntime
+@inject HttpClient _client
+@inject NavigationManager _navigationManager
+@attribute [Authorize(Roles = $"CODGOwner, Admin")]
+
+<PageTitle>Edit User</PageTitle>
+
+<h4 class="mt-5">Edit User</h4>
+<MudPaper Elevation="25" Class="mb-2 mt-4">
+    <MudToolBar>
+        <MudText>
+            <Navigation />
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+    </MudToolBar>
+</MudPaper>
+
+
+<MudPaper Elevation="25" Class="mb-2 mt-4 p-5">
+    <EditForm Model="@UserInputModel" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInValidSubmit">
+        <DataAnnotationsValidator/>
+
+        <MudTextField Label="Username" @bind-Value="UserInputModel.UserName" For="@(() => UserInputModel.UserName)" />
+        <MudTextField Label="First Name" @bind-Value="UserInputModel.FirstName" For="@(() => UserInputModel.FirstName)" />
+        <MudTextField Label="Last Name" @bind-Value="UserInputModel.LastName" For="@(() => UserInputModel.LastName)" />
+        <MudTextField Label="Email" @bind-Value="UserInputModel.Email" For="@(() => UserInputModel.Email)" />
+        
+        @if(Roles is not null && options is not null) {
+            <MudSelect Class="mt-4" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionText))" T="string" Label="Roles" MultiSelection="true" @bind-Value="value" @bind-SelectedValues='options'>
+                @foreach (var role in Roles)
+                {
+                    <MudSelectItem T="string" Value="@role.Name">@role.Name</MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        @if(Stores is not null) {
+            <MudSelect Class="mt-4" SelectAll="true" SelectAllText="Select all stores" MultiSelectionTextFunc="@(new Func<List<string>, string>(GetMultiSelectionStores))" T="string" Label="Stores" MultiSelection="true" @bind-Value="storeValue" @bind-SelectedValues='storeOptions'>
+                @foreach (var store in Stores)
+                {
+                    <MudSelectItem T="string" Value="@store.Id">@store.Code</MudSelectItem>
+                }
+            </MudSelect>
+        }
+
+        
+
+        <MudCardActions>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">Add</MudButton>
+        </MudCardActions>
+    </EditForm>
+</MudPaper>
+
+
+
+
+@code {
+    [Parameter] public string Id { get; set; }
+    bool success;
+    bool isShow;
+    private string value { get; set; } = "Nothing selected";
+    private IEnumerable<string> options { get; set; } = new HashSet<string>();
+
+    private string storeValue { get; set; } = "Nothing selected";
+    private IEnumerable<string> storeOptions { get; set; } = new HashSet<string>();
+
+    private UserInputModel UserInputModel = new UserInputModel();
+
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    private List<UserStore> UserStores { get; set; }
+    private List<IdentityRole> Roles { get; set; }
+    private List<Store> Stores { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Stores = await _client.GetFromJsonAsync<List<Store>>($"/api/store");
+        Roles = await _client.GetFromJsonAsync<List<IdentityRole>>($"/api/roles");
+
+        UserStores = await _client.GetFromJsonAsync<List<UserStore>>($"/api/userstore/filter?userId={Id}");
+        storeOptions = UserStores.Select(x => x.StoreId);
+
+        var userRoles = await _client.GetFromJsonAsync<List<IdentityUserRole<string>>>($"/api/userroles/{Id}");
+        options = Roles.Where(x => userRoles.Any(y => y.RoleId == x.Id)).Select(x => x.Name);
+
+
+        var user = await _client.GetFromJsonAsync<UserInputModel>($"/api/users/{Id}");
+        
+        
+
+        UserInputModel = new UserInputModel
+        {
+            Id = user.Id,
+            UserName = user.UserName,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email
+        };
+    }
+
+    private string GetMultiSelectionText(List<string> selectedValues)
+    {
+        
+        return $"{string.Join(", ", selectedValues)}";
+    }
+
+    private string GetMultiSelectionStores(List<string> selectedValues)
+    {
+        // get store codes from selectedValues
+        var storeCodes = Stores.Where(x => selectedValues.Contains(x.Id)).Select(x => x.Code).ToList();
+
+        return $"{string.Join(", ", storeCodes)}";
+    }
+    
+
+    private async Task OnValidSubmit() 
+    {
+        var response = await _client.PutAsJsonAsync($"/api/users/{Id}", UserInputModel);
+
+        if(response.IsSuccessStatusCode)
+        {
+            success = true;
+            Snackbar.Add($"New User is created", Severity.Success);
+            
+
+            var roleResponse = await _client.PutAsJsonAsync($"api/userroles/{Id}", options);
+            
+            if(roleResponse.IsSuccessStatusCode) {
+                Snackbar.Add($"Roles are assigned to the user", Severity.Success);
+
+                foreach(var item in UserStores)
+                {
+                    if(!storeOptions.Contains(item.StoreId))
+                    {
+                        var deleteResponse = await _client.DeleteAsync($"api/userstore/{item.Id}");
+                        if(deleteResponse.IsSuccessStatusCode)
+                        {
+                            Snackbar.Add($"Store is removed from the user", Severity.Success);
+                        }
+                    }
+                }
+
+                foreach(var item in storeOptions)
+                {
+                    if(!UserStores.Any(x => x.StoreId == item))
+                    {
+                        var userStore = new UserStore
+                        {
+                            ApplicationUserId = Id,
+                            StoreId = item
+                        };
+                        var postResponse = await _client.PostAsJsonAsync($"api/userstore", userStore);
+                        if(postResponse.IsSuccessStatusCode)
+                        {
+                            Snackbar.Add($"Store is added to the user", Severity.Success);
+                        }
+                    }
+                }
+
+            }
+            else
+            {
+                Snackbar.Add($"New User is created but role is not assigned", Severity.Warning);
+            }
+
+            _navigationManager.NavigateTo($"admin/users");
+        }
+        else
+        {
+            success = false;
+            var error = await response.Content.ReadAsStringAsync();
+            Snackbar.Add($"{error}", Severity.Error);
+            
+        }
+    }
+
+    void ButtonTestclick()
+    {
+        @if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+
+    private void OnInValidSubmit() 
+    {
+        success = false;
+        Snackbar.Add($"Please make sure to fill all necessary data!", Severity.Error);
+
+    }
+
+
+}
