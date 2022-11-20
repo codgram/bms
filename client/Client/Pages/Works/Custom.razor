@@ -1,4 +1,4 @@
-@page "/works/custom/{documentNo?}"
+@page "/works/custom/{workHeaderId?}"
 @using Model.Work
 @inject NavigationManager _navigationManager
 @inject StateContainer _stateContainer
@@ -7,9 +7,9 @@
 @inject HttpClient _client
 
 
-<h3 class="mb-4">@documentNo</h3>
+<h3 class="mb-4">@(CustomWorkHeader is not null ? CustomWorkHeader.DocumentNo : "loading...")</h3>
 
-@if(String.IsNullOrEmpty(documentNo))
+@if(String.IsNullOrEmpty(workHeaderId))
 {
     <EditForm Model="CustomWorkHeader" OnValidSubmit="@CreateCustomWorkHeader">
         <DataAnnotationsValidator />
@@ -44,7 +44,7 @@
       foreach (var customWorkHeader in CustomWorkHeaders)
       {
 
-        <a @onclick='@(() => SelectCustomWorkHeader(customWorkHeader.DocumentNo))' class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+        <a @onclick='@(() => SelectCustomWorkHeader(customWorkHeader.Id))' class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
           <div class="d-flex gap-2 w-100 justify-content-between">
             <div>
               <h6 class="mb-0">@customWorkHeader.DocumentNo</h6>
@@ -138,7 +138,7 @@ else {
 
 @code
 {
-    [Parameter] public string documentNo { get; set; }
+    [Parameter] public string workHeaderId { get; set; }
     public CustomWorkHeader CustomWorkHeader = new CustomWorkHeader();
     public List<CustomWorkHeader> CustomWorkHeaders { get; set; }
     public List<CustomWorkLine> CustomWorkLines = new List<CustomWorkLine>();
@@ -147,7 +147,7 @@ else {
 
     protected override async Task OnInitializedAsync()
     {
-        if(String.IsNullOrEmpty(documentNo) && _stateContainer.Company is not null)
+        if(String.IsNullOrEmpty(workHeaderId) && _stateContainer.Company is not null)
         {
             CustomWorkHeaders = await _client.GetFromJsonAsync<List<CustomWorkHeader>>($"api/works/custom/headers/filter?companyId={_stateContainer.Company.Id}");
         }
@@ -157,19 +157,19 @@ else {
             {
               CustomWorkHeaders = await _client.GetFromJsonAsync<List<CustomWorkHeader>>($"api/works/custom/headers/filter?companyId={_stateContainer.Company.Id}");
             }
-            CustomWorkHeader = CustomWorkHeaders.FirstOrDefault(c => c.DocumentNo == documentNo);
+            CustomWorkHeader = CustomWorkHeaders.FirstOrDefault(c => c.Id == workHeaderId);
             Console.WriteLine("CustomWorkHeader: " + CustomWorkHeader.DocumentNo);
             CustomWorkLines = await _client.GetFromJsonAsync<List<CustomWorkLine>>($"api/works/custom/lines/filter?companyId={CustomWorkHeader.CompanyId}&customWorkHeaderId={CustomWorkHeader.Id}");
         }
     }
 
-    private async Task SelectCustomWorkHeader(string documentNo)
+    private async Task SelectCustomWorkHeader(string workHeaderId)
     {
-        CustomWorkHeader = CustomWorkHeaders.FirstOrDefault(c => c.DocumentNo == documentNo);
+        CustomWorkHeader = CustomWorkHeaders.FirstOrDefault(c => c.Id == workHeaderId);
         Console.WriteLine("CustomWorkHeader: " + CustomWorkHeader.DocumentNo);
         CustomWorkLines = await _client.GetFromJsonAsync<List<CustomWorkLine>>($"api/works/custom/lines/filter?companyId={CustomWorkHeader.CompanyId}&customWorkHeaderId={CustomWorkHeader.Id}");
 
-          _navigationManager.NavigateTo($"/works/custom/{documentNo}");
+          _navigationManager.NavigateTo($"/works/custom/{workHeaderId}");
     }
 
     private async Task AddCustomWorkLine()
@@ -200,7 +200,7 @@ else {
 
     private async Task CreateCustomWorkHeader()
     {
-        if(!CustomWorkHeaders.Any(c => c.DocumentNo == documentNo))
+        if(!CustomWorkHeaders.Any(c => c.Id == workHeaderId))
         {
           CustomWorkHeader.CompanyId = _stateContainer.Company.Id;
 
