@@ -36,6 +36,7 @@
         <MudTd DataLabel="DocumentNo">@context.DocumentNo</MudTd>
         <MudTd DataLabel="Status">@context.Status</MudTd>
         <MudTd DataLabel="Action" Class="text-end">
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Rocket" OnClick='@(() => OnPostAsync(context.Id))'/>
             <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.OpenInNew" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/details"))'/>
             <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/edit"))'/>
             <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" />
@@ -105,9 +106,28 @@
         
     }
 
-    private async void PostWorkHeaderAsync()
+    private async void OnPostAsync(string id)
     {
+        // prompt the user to confirm
+        var confirmResult = await _jsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to post this work?");
+        var customWorkHeader = CustomWorkHeaders.FirstOrDefault(j => j.Id == id);
+        customWorkHeader.Status = Model.Enum.DocumentStatus.Posted;
 
+        if(confirmResult) {
+            var request = await _client.PutAsJsonAsync<CustomWorkHeader>($"api/works/custom/headers/{id}", customWorkHeader);
+
+            if(request.IsSuccessStatusCode) {
+                Snackbar.Add($"Custom Work {customWorkHeader.DocumentNo} is posted", Severity.Success);
+                StateHasChanged();
+            }
+            else {
+                Snackbar.Add($"Work Header is not deleted", Severity.Error);
+            }
+        }
+        else {
+            Snackbar.Add($"Operation was canceled", Severity.Info);
+        }
+        
     }
 
 
