@@ -13,31 +13,61 @@
 
 <div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
     <nav class="flex-column">
+
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Home
+                <span class="oi oi-home ms-2" aria-hidden="true"></span> Home
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="org/entities">
-                <i class="bi bi-building me-2" style="font-size:1.2rem"></i> Entities
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="org/stores">
-                <i class="bi bi-shop me-2" style="font-size:1.2rem"></i> Stores
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin/users">
-                <i class="bi bi-person me-2" style="font-size:1.2rem"></i> Users
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="works/custom/headers">
-                <span class="oi oi-plus" aria-hidden="true"></span> Custom Works
-            </NavLink>
-        </div>
+        
+        @* <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_User")'>
+            <Authorized>
+                <div class="nav-item px-3">
+                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                        <span class="oi oi-home" aria-hidden="true"></span> Home
+                    </NavLink>
+                </div>
+            </Authorized>
+        </AuthorizeView> *@
+
+        @if(_stateContainer.Company is not null)
+        {
+            <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin")'>
+                <Authorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="org/entities">
+                            <i class="bi bi-building ms-2 me-2" style="font-size:1.2rem"></i> Entities
+                        </NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="org/stores">
+                            <i class="bi bi-shop ms-2 me-2" style="font-size:1.2rem"></i> Stores
+                        </NavLink>
+                    </div>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="admin/users">
+                            <i class="bi bi-person ms-2 me-2" style="font-size:1.2rem"></i> Users
+                        </NavLink>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+            <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Id}_ReceivingAdmin")'>
+                <Authorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" href="works/custom/headers">
+                            <span class="oi oi-plus ms-2" aria-hidden="true"></span> Custom Works
+                        </NavLink>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+        }
+
+        
+        
+        
+        
     </nav>
 </div>
 
