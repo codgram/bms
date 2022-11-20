@@ -4,7 +4,6 @@
 @inject IJSRuntime _jsRuntime
 @inject HttpClient _client
 @inject NavigationManager _navigationManager
-@* @attribute [Authorize(Roles = "Owner, Admin")] *@
 
 <PageTitle>Add User</PageTitle>
 
@@ -32,8 +31,6 @@
                 }
             </MudSelect>
         }
-
-        
 
         <MudTextField Label="Username" @bind-Value="UserInputModel.UserName" For="@(() => UserInputModel.UserName)" />
         <MudTextField Label="First Name" @bind-Value="UserInputModel.FirstName" For="@(() => UserInputModel.FirstName)" />
@@ -123,7 +120,7 @@
     {
 
         // create user
-        var response = await _client.PostAsJsonAsync($"/api/users", UserInputModel);
+        var response = await _client.PostAsJsonAsync($"/api/users?companyId={_stateContainer.Company.Id}", UserInputModel);
 
         if(response.IsSuccessStatusCode)
         {

@@ -4,57 +4,73 @@
 @inject IJSRuntime _jsRuntime
 @inject ISnackbar Snackbar
 @inject NavigationManager _navigationManager
-@* @attribute [Authorize(Roles = "Owner, Admin")] *@
+@inject StateContainer _stateContainer
 
 <PageTitle>Users</PageTitle>
 
 <h4 class="mt-5">Users</h4>
 
-<MudPaper Elevation="25" Class="mb-2 mt-4">
-    <MudToolBar>
-        <MudText>
-            <Navigation />
-        </MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick='@(() => Navigate("admin/users/add"))' />
-        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
-    </MudToolBar>
-</MudPaper>
+<AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin")'>
+    <Authorizing>
+        <p>Authorizing the page ...</p>
+    </Authorizing>
+    <Authorized>
+        <MudPaper Elevation="25" Class="mb-2 mt-4">
+            <MudToolBar>
+                <MudText>
+                    <Navigation />
+                </MudText>
+                <MudSpacer />
+                <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick='@(() => Navigate("admin/users/add"))' />
+                    <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+                </MudToolBar>
+        </MudPaper>
 
-<MudTable Items="@ApplicationUsers" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<ApplicationUser,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Users</MudText>
-        <MudSpacer />
-        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
-    </ToolBarContent>
-    <HeaderContent>
-        <MudTh>Username</MudTh>
-        <MudTh>Email</MudTh>
-        <MudTh>First Name</MudTh>
-        <MudTh>Last Name</MudTh>
-        <MudTh></MudTh>
-    </HeaderContent>
-    <RowTemplate>
-        <MudTd DataLabel="Nr">@context.UserName</MudTd>
-        <MudTd DataLabel="Name">@context.Email</MudTd>
-        <MudTd DataLabel="Nr">@context.FirstName</MudTd>
-        <MudTd DataLabel="Nr">@context.LastName</MudTd>
-        <MudTd DataLabel="Action">
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => Navigate($"admin/users/{context.Id}/edit"))'/>
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" />
-                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Key" OnClick='@(() => Navigate($"admin/users/{context.Id}/reset-password"))'/>
-        </MudTd>
-    </RowTemplate>
-    <PagerContent>
-        <MudTablePager />
-    </PagerContent>
-</MudTable>
+    <MudTable Items="@ApplicationUsers" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<ApplicationUser,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Users</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTh>Username</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>First Name</MudTh>
+            <MudTh>Last Name</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate Context="user">
+            <MudTd DataLabel="Username">@user.UserName</MudTd>
+            <MudTd DataLabel="Email">@user.Email</MudTd>
+            <MudTd DataLabel="First Name">@user.FirstName</MudTd>
+            <MudTd DataLabel="Last Name">@user.LastName</MudTd>
+            <MudTd DataLabel="Action">
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => Navigate($"admin/users/{user.Id}/edit"))'/>
+                <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(user.Id))" />
+                    <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Key" OnClick='@(() => Navigate($"admin/users/{user.Id}/reset-password"))'/>
+            </MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
 
-<div class="d-flex flex-wrap mt-4">
-    <div style="min-width:200px;">
-        <MudText Inline="true" Class="align-self-center">Selected1: @selectedItem1?.UserName</MudText>
+    <div class="d-flex flex-wrap mt-4">
+        <div style="min-width:200px;">
+            <MudText Inline="true" Class="align-self-center">Selected1: @selectedItem1?.UserName</MudText>
+        </div>
     </div>
-</div>
+    </Authorized>
+    <NotAuthorized>
+        @*Alert*@
+        <MudAlert Severity="Severity.Error" Class="mt-4">
+            <MudText>Not authorized to view this page.</MudText>
+        </MudAlert>
+    </NotAuthorized>
+
+</AuthorizeView>
+
+
 
 
 
@@ -71,7 +87,19 @@
 
     protected override async Task OnInitializedAsync()
     {
-        ApplicationUsers = await _client.GetFromJsonAsync<List<ApplicationUser>>("api/users");
+        try
+        {
+            ApplicationUsers = await _client.GetFromJsonAsync<List<ApplicationUser>>($"api/users?companyId={_stateContainer.Company.Id}");
+        }
+        catch (HttpRequestException ex)
+        {
+            if(ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                Snackbar.Add("You are not authorized!", Severity.Error);
+            }
+            
+        }
+        
     }
 
     private bool FilterFunc1(ApplicationUser ApplicationUser) => FilterFunc(ApplicationUser, searchString1);

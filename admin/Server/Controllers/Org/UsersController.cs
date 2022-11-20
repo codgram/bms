@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using Application.Server.Attributes;
 
 namespace Admin.Server.Controllers.Org;
 
@@ -32,16 +34,22 @@ public class UsersController : ControllerBase
         _emailStore = GetEmailStore();
     }
 
-
-    // Get food pairing by Id
+    // get users
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<ApplicationUser>>> GetUsersAsync()
+    [CustomAuthorize(roleNames: "Admin")]
+    public async Task<ActionResult<IEnumerable<ApplicationUser>>> GetUsersAsync([FromQuery] string? companyId)
     {
-        return await _context.ApplicationUser.OrderBy(u => u.UserName).ToListAsync();
+        var user = await _userManager.GetUserAsync(User);
+        var memberIds = await _context.Member.Where(m => m.CompanyId == companyId).Select(m => m.ApplicationUserId).ToArrayAsync();
+
+        // return the users that are members
+        return await _context.Users.Where(u => memberIds.Contains(u.Id)).ToListAsync();
     }
 
+
     [HttpGet("{id}")]
-    public async Task<ActionResult<ApplicationUser>> GetUserByIdAsync(string id)
+    [CustomAuthorize(roleNames: "Admin")]
+    public async Task<ActionResult<ApplicationUser>> GetUserAsync(string id, [FromQuery] string? companyId)
     {
         return await _userManager.FindByIdAsync(id);
     }
@@ -50,7 +58,8 @@ public class UsersController : ControllerBase
 
     // Add new user
     [HttpPost]
-    public async Task<ActionResult<ApplicationUser>> AddUserAsync(UserInputModel userInputModel)
+    [CustomAuthorize(roleNames: "Admin")]
+    public async Task<ActionResult<ApplicationUser>> AddUserAsync(UserInputModel userInputModel, [FromQuery] string companyId)
     {
         var user = new ApplicationUser() {
             UserName = userInputModel.UserName,
@@ -69,8 +78,6 @@ public class UsersController : ControllerBase
             await _userManager.CreateAsync(user, user.Password);
             var userId = await _userManager.GetUserIdAsync(user);
 
-            Console.WriteLine("------------------------------------------------------------User created: " + userId);
-
             return user;
         }
         else {
@@ -81,7 +88,8 @@ public class UsersController : ControllerBase
 
 
     [HttpPut("{id}")]
-    public async Task<ActionResult<ApplicationUser>> UpdateUserAsync(string id, UserInputModel userInputModel)
+    [CustomAuthorize(roleNames: "Admin")]
+    public async Task<ActionResult<ApplicationUser>> UpdateUserAsync(string id, UserInputModel userInputModel, [FromQuery] string companyId)
     {
 
         var user = await _userManager.FindByNameAsync(userInputModel.UserName);
@@ -120,7 +128,8 @@ public class UsersController : ControllerBase
 
 
     [HttpPut("password/reset/{id}")]
-    public async Task<ActionResult<ApplicationUser>> ResetPasswordAsync(string id, UserInputModel userInput)
+    [CustomAuthorize(roleNames: "Admin")]
+    public async Task<ActionResult<ApplicationUser>> ResetPasswordAsync(string id, UserInputModel userInput, [FromQuery] string companyId)
     {
         var user = await _userManager.FindByNameAsync(userInput.UserName);
 
@@ -149,7 +158,8 @@ public class UsersController : ControllerBase
 
     // delete
     [HttpDelete("{id}")]
-    public async Task<ActionResult<ApplicationUser>> DeleteUserAsync(string id)
+    [CustomAuthorize(roleNames: "Admin")]
+    public async Task<ActionResult<ApplicationUser>> DeleteUserAsync(string id, [FromQuery] string companyId)
     {
         // get user
         var user = await _userManager.FindByIdAsync(id);
@@ -192,8 +202,6 @@ public class UsersController : ControllerBase
         await _context.SaveChangesAsync();
         return user;
     }
-
-
 
     private bool UserExists(string id)
     {
