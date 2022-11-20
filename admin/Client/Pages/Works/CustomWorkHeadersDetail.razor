@@ -52,8 +52,8 @@
         <MudTd DataLabel="ExpiryDate">@context.ExpiryDate.ToString("dd/MM/yyyy")</MudTd>
         <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
         <MudTd DataLabel="Action" Class="text-end">
-            @* <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/edit"))'/>
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" /> *@
+            @* <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/edit"))'/> *@
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" />
         </MudTd>
     </RowTemplate>
     <PagerContent>
@@ -123,6 +123,30 @@
     {
         Snackbar.Add($"Please make sure to fill all necessary data!", Severity.Error);
 
+    }
+
+    private async void OnDeleteAsync(string id)
+    {
+        // prompt the user to confirm
+        var confirmResult = await _jsRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this work?");
+        var customWorkLine = CustomWorkLines.FirstOrDefault(j => j.Id == id);
+
+        if(confirmResult) {
+            var request = await _client.DeleteAsync($"api/works/custom/lines/{id}");
+
+            if(request.IsSuccessStatusCode) {
+                Snackbar.Add($"Custom Work {customWorkLine.BarcodeNo} is deleted", Severity.Success);
+                CustomWorkLines.Remove(customWorkLine);
+                StateHasChanged();
+            }
+            else {
+                Snackbar.Add($"Work Header is not deleted", Severity.Error);
+            }
+        }
+        else {
+            Snackbar.Add($"Operation was canceled", Severity.Info);
+        }
+        
     }
 
     public async void ExportAsync()
