@@ -108,27 +108,37 @@ public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
             entity.HasOne(e => e.Item).WithMany().OnDelete(DeleteBehavior.Restrict);
         });
 
-        builder.Entity<Category>(entity =>
-        {
-            entity.HasOne(e => e.Company).WithMany().OnDelete(DeleteBehavior.Restrict);
-        });
-
         builder.Entity<Item>(entity =>
         {
             entity.HasOne(e => e.Company).WithMany().OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Subgroup).WithMany().OnDelete(DeleteBehavior.NoAction);
+        });
+
+        builder.Entity<Division>(entity =>
+        {
+            entity.HasOne(e => e.Company).WithMany().OnDelete(DeleteBehavior.Restrict);
         });
 
 
         builder.Entity<Category>(entity =>
         {
-            entity.HasOne(e => e.Company).WithMany().OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Division).WithMany().OnDelete(DeleteBehavior.Restrict);
         });
 
-        builder.Entity<Subcategory>(entity =>
+         builder.Entity<Subcategory>(entity =>
         {
             entity.HasOne(e => e.Category).WithMany().OnDelete(DeleteBehavior.Restrict);
         });
 
+         builder.Entity<Group>(entity =>
+        {
+            entity.HasOne(e => e.Category).WithMany().OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Subgroup>(entity =>
+        {
+            entity.HasOne(e => e.Group).WithMany().OnDelete(DeleteBehavior.Restrict);
+        });
 
         builder.Entity<CustomWorkHeader>(entity =>
         {
@@ -158,8 +168,11 @@ public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
     public DbSet<Entity> Entity { get; set; }
     public DbSet<Store> Store { get; set; }
     public DbSet<UserStore> UserStore { get; set; }
+    public DbSet<Division> Division { get; set; }
     public DbSet<Category> Category { get; set; }
     public DbSet<Subcategory> Subcategory { get; set; }
+    public DbSet<Group> Group { get; set; }
+    public DbSet<Subgroup> Subgroup { get; set; }
     public DbSet<Item> Item { get; set; }
     public DbSet<Vendor> Vendor { get; set; }
     public DbSet<PurchaseHeader> PurchaseHeader { get; set; }
