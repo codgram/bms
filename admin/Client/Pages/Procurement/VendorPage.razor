@@ -1,0 +1,122 @@
+@page "/procurement/vendors"
+@using Model.Procurement
+@inherits ProcurementBase
+
+
+<h4 class="mt-5">Vendor</h4>
+
+<MudPaper Elevation="25" Class="mb-2 mt-4">
+    <MudToolBar>
+        <MudText>
+            <Navigation />
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.Add" data-bs-toggle="offcanvas" OnClick='@(() => ResetObject("vendor"))' data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions"/>
+        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+    </MudToolBar>
+</MudPaper>
+
+
+<MudTable Items="@Vendors" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<Vendor,bool>(FilterVendorFunc)" @bind-SelectedItem="SelectedVendor">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Items</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Code</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Code">@context.Code</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Edit">
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => GetVendorAsync(context.Id))" data-bs-toggle="offcanvas"  data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions"/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick='@(() => OnDeleteAsync(context.Id, "vendor"))' />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<div class="d-flex flex-wrap mt-4">
+    <div style="min-width:200px;">
+        <MudText Inline="true" Class="align-self-center">Selected1: @SelectedVendor?.Name</MudText>
+    </div>
+</div>
+
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions" aria-labelledby="offcanvasWithBothOptionsLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">Create a new Vendor</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" OnClick='@(() => ResetObject("vendor"))'></button>
+  </div>
+  <div class="offcanvas-body">
+    
+
+    <EditForm Model="@Vendor" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInValidSubmit">
+        <DataAnnotationsValidator/>
+
+        <MudTextField Label="Code" HelperText="Max. 15 characters" @bind-Value="Vendor.Code" For="@(() => Vendor.Code)" />
+        <MudTextField Label="Name" HelperText="Max. 100 characters" @bind-Value="Vendor.Name" For="@(() => Vendor.Name)" />
+        <MudTextField Label="Description" HelperText="Max. 100 characters" @bind-Value="Vendor.Description" For="@(() => Vendor.Description)" />
+            
+        <MudCardActions>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" data-bs-dismiss="offcanvas" aria-label="Close" >@SubmitButtonText</MudButton>
+        </MudCardActions>
+    </EditForm>
+
+
+  </div>
+</div>
+
+
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        SubmitButtonText = "Add";
+        Vendors = await GetObjectsAsync<Vendor>("vendors");
+    }
+
+
+    public async Task OnValidSubmit()
+    {
+        if (SubmitButtonText.ToLower() == "add")
+        {
+            Vendor.CompanyId = _stateContainer.Company.Id;
+            var response = await _client.PostAsJsonAsync<Vendor>("api/vendors", Vendor);
+            if (response.IsSuccessStatusCode)
+            {
+                _snackBar.Add("Vendor Added Successfully", Severity.Success);
+                _navigationManager.NavigateTo("/pfm/vendors");
+                Vendors.Add(Vendor);
+            }
+            else
+            {
+                _snackBar.Add("Vendor Add Failed", Severity.Error);
+            }
+        }
+        else if (SubmitButtonText.ToLower() == "save")
+        {
+            var response = await _client.PutAsJsonAsync<Vendor>($"api/vendors/{Vendor.Id}", Vendor);
+            if (response.IsSuccessStatusCode)
+            {
+                _snackBar.Add("Vendor Updated Successfully", Severity.Success);
+                _navigationManager.NavigateTo("/pfm/vendors");
+                
+                // update vendor in list
+                var index = Vendors.FindIndex(x => x.Id == Vendor.Id);
+                Vendors[index] = Vendor;
+            }
+            else
+            {
+                _snackBar.Add("Vendor Update Failed", Severity.Error);
+            }
+        }
+    }
+}
