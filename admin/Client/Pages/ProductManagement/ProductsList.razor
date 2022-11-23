@@ -1,0 +1,92 @@
+@page "/pfm/items"
+@inject HttpClient _client
+@inherits ProductBase
+
+
+<h4 class="mt-5">Items</h4>
+
+<MudPaper Elevation="25" Class="mb-2 mt-4">
+    <MudToolBar>
+        <MudText>
+            <Navigation />
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick='@(() => _navigationManager.NavigateTo("pfm/items/add"))' />
+        <MudIconButton Icon="@Icons.Filled.Upload" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions" />
+        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+    </MudToolBar>
+</MudPaper>
+
+<MudTable Items="@Items" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<Item,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Items</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Code</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Brand</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh>Size</MudTh>
+        <MudTh>Vendor No</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh>Purchase UOM</MudTh>
+        <MudTh>Status</MudTh>
+
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Code">@context.Code</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Brand">@context.Brand</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Size">@context.Size</MudTd>
+        <MudTd DataLabel="Vendor">@context.Vendor.Code</MudTd>
+        <MudTd DataLabel="Size">@context.Type</MudTd>
+        <MudTd DataLabel="Size">@context.PurchaseUOM</MudTd>
+        <MudTd DataLabel="Size">@context.Status</MudTd>
+        <MudTd DataLabel="Edit">
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => _navigationManager.NavigateTo($"pfm/items/edit/{context.Id}"))'/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<div class="d-flex flex-wrap mt-4">
+    <div style="min-width:200px;">
+        <MudText Inline="true" Class="align-self-center">Selected1: @selectedItem1?.Name</MudText>
+    </div>
+</div>
+
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions" aria-labelledby="offcanvasWithBothOptionsLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">Import Items</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" '@(() => ResetObject("division"))'></button>
+  </div>
+  <div class="offcanvas-body">
+    
+    <h5>Coming Soon</h5>
+
+  </div>
+</div>
+
+
+
+@code {
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        Items = await GetItemsAsync();
+    }
+
+    
+
+
+}

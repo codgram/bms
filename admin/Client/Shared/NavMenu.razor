@@ -1,3 +1,6 @@
+﻿@inject NavigationManager _navigationManager
+
+
 <div class="top-row ps-3 navbar navbar-white">
     <div class="container-fluid">
         @* <a class="navbar-brand" href="">Application</a> *@
@@ -15,22 +18,59 @@
     <nav class="flex-column">
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+            <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick='@(() => _navigationManager.NavigateTo("/", true))'>
                 <span class="oi oi-home ms-2" aria-hidden="true"></span> Home
             </NavLink>
         </div>
+        @if(_stateContainer.Company is not null && String.IsNullOrEmpty(Module))
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" @onclick='@(() => _navigationManager.NavigateTo("org", true))'>
+                    <i class="bi bi-building ms-2 me-2" style="font-size:1.2rem"></i> Organization
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link"@onclick='@(() => _navigationManager.NavigateTo("pfm", true))'>
+                    <i class="bi bi-box ms-2 me-2" style="font-size:1.2rem"></i> Product Management
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" @onclick='@(() => _navigationManager.NavigateTo("work", true))'>
+                    <i class="bi bi-person-workspace ms-2 me-2" style="font-size:1.2rem"></i> Work Management
+                </NavLink>
+            </div>
+        }
         
-        @* <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_User")'>
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                        <span class="oi oi-home" aria-hidden="true"></span> Home
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView> *@
+        else if(_stateContainer.Company is not null && Module.ToLower() == "pfm")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="pfm/divisions">
+                    <i class="bi bi-1-square ms-2 me-2" style="font-size:1.2rem"></i> Divisions
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="pfm/categories">
+                    <i class="bi bi-2-square ms-2 me-2" style="font-size:1.2rem"></i> Categories
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="pfm/groups">
+                    <i class="bi bi-3-square ms-2 me-2" style="font-size:1.2rem"></i> Groups
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="pfm/subgroups">
+                    <i class="bi bi-4-square ms-2 me-2" style="font-size:1.2rem"></i> Subgroups
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="pfm/items">
+                    <i class="bi bi-box ms-2 me-2" style="font-size:1.2rem"></i> Items
+                </NavLink>
+            </div>
+        }
 
-        @if(_stateContainer.Company is not null)
+        else if(_stateContainer.Company is not null && Module.ToLower() == "org")
         {
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin")'>
                 <Authorized>
@@ -51,6 +91,10 @@
                     </div>
                 </Authorized>
             </AuthorizeView>
+        }
+
+        else if(_stateContainer.Company is not null && Module.ToLower() == "work")
+        {
 
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Code}_ReceivingAdmin")'>
                 <Authorized>
@@ -61,8 +105,8 @@
                     </div>
                 </Authorized>
             </AuthorizeView>
-
         }
+
 
         
         
@@ -74,9 +118,17 @@
 @code {
     
     [Parameter] public string CompanyName { get; set; }
+        public string Module { get; set; } = "";
     private bool collapseNavMenu = true;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var relativePath = _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
+        Module = relativePath.Split("/").First();
+        Console.WriteLine(Module);
+    }
 
     private void ToggleNavMenu()
     {
