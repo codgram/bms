@@ -1,0 +1,130 @@
+@page "/pfm/categories"
+@inherits ProductHierarchyBase
+
+
+<h4 class="mt-5">Category</h4>
+
+<MudPaper Elevation="25" Class="mb-2 mt-4">
+    <MudToolBar>
+        <MudText>
+            <Navigation />
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.Add" data-bs-toggle="offcanvas" OnClick='@(() => ResetObject("category"))' data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions"/>
+        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+    </MudToolBar>
+</MudPaper>
+
+
+<MudTable Items="@Categories" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<Category,bool>(FilterCategoryFunc)" @bind-SelectedItem="SelectedCategory">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Items</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Code</MudTh>
+        <MudTh>Name</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Code">@context.Code</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Edit">
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => GetCategoryAsync(context.Id))" data-bs-toggle="offcanvas"  data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions"/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick='@(() => OnDeleteAsync(context.Id, "category"))' />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<div class="d-flex flex-wrap mt-4">
+    <div style="min-width:200px;">
+        <MudText Inline="true" Class="align-self-center">Selected1: @SelectedCategory?.Name</MudText>
+    </div>
+</div>
+
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions" aria-labelledby="offcanvasWithBothOptionsLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">Create a new Category</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" '@(() => ResetObject("division"))'></button>
+  </div>
+  <div class="offcanvas-body">
+    
+
+    <EditForm Model="@Category" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInValidSubmit">
+        <DataAnnotationsValidator/>
+
+        <MudSelect HelperText="Choose entity" T="string" Label="Division" Variant="Variant.Text"  @bind-Value="Category.DivisionId">
+            @if(Divisions is not null) {
+                @foreach (var division in Divisions)
+                {
+                    <MudSelectItem Value="@division.Id"> @division.Code - @division.Name</MudSelectItem>
+                }
+            }
+            
+        </MudSelect>
+
+        <MudTextField Label="Code" HelperText="Max. 15 characters" @bind-Value="Category.Code" For="@(() => Category.Code)" />
+        <MudTextField Label="Name" HelperText="Max. 100 characters" @bind-Value="Category.Name" For="@(() => Category.Name)" />
+        <MudTextField Label="Description" HelperText="Max. 100 characters" @bind-Value="Category.Description" For="@(() => Category.Description)" />
+            
+        <MudCardActions>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" data-bs-dismiss="offcanvas" aria-label="Close" >@SubmitButtonText</MudButton>
+        </MudCardActions>
+    </EditForm>
+
+
+  </div>
+</div>
+
+
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        SubmitButtonText = "Add";
+        Categories = await GetObjectsAsync<Category>("categories");
+        Divisions = await GetObjectsAsync<Division>("divisions");
+    }
+
+        public async Task OnValidSubmit()
+    {
+        if (SubmitButtonText.ToLower() == "add")
+        {
+            var response = await _client.PostAsJsonAsync<Category>("api/categories", Category);
+            if (response.IsSuccessStatusCode)
+            {
+                _snackBar.Add("Category Added Successfully", Severity.Success);
+                _navigationManager.NavigateTo("/pfm/categories");
+                Categories.Add(Category);
+            }
+            else
+            {
+                _snackBar.Add("Category Add Failed", Severity.Error);
+            }
+        }
+        else if (SubmitButtonText.ToLower() == "save")
+        {
+            var response = await _client.PutAsJsonAsync<Category>($"api/categories/{Category.Id}", Category);
+            if (response.IsSuccessStatusCode)
+            {
+                _snackBar.Add("Category Updated Successfully", Severity.Success);
+                _navigationManager.NavigateTo("/pfm/categories");
+                
+                // update division in list
+                var index = Categories.FindIndex(x => x.Id == Category.Id);
+                Categories[index] = Category;
+            }
+            else
+            {
+                _snackBar.Add("Category Update Failed", Severity.Error);
+            }
+        }
+    }
+}

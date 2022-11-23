@@ -1,0 +1,85 @@
+@page "/pfm/items/{action}/{Id?}"
+@inherits ProductBase
+
+<h4 class="mt-5">Add new Item</h4>
+
+<MudPaper Elevation="25" Class="mb-2 mt-4">
+    <MudToolBar>
+        <MudText>
+            <Navigation />
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+    </MudToolBar>
+</MudPaper>
+
+<div class="d-flex">
+
+
+<MudItem xs="12" lg="8">
+    <MudPaper Elevation="25" Class="mb-2 mt-4 me-2 p-5">
+        <EditForm Model="@Item" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInValidSubmit">
+            <DataAnnotationsValidator/>
+
+            <MudSelect HelperText="Choose entity" T="ItemType" Label="Type" Variant="Variant.Text"  @bind-Value="Item.Type">
+                <MudSelectItem Value="@ItemType.Good"> @ItemType.Good</MudSelectItem>
+                <MudSelectItem Value="@ItemType.Service"> @ItemType.Service</MudSelectItem>
+            </MudSelect>
+
+            <MudSelect HelperText="Choose entity" T="string" Label="Subgroup" Variant="Variant.Text"  @bind-Value="Item.SubgroupId">
+                @if(Subgroups is not null) {
+                    @foreach (var subgroup in Subgroups)
+                    {
+                        <MudSelectItem Value="@subgroup.Id"> @subgroup.Code - @subgroup.Name</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+
+            <MudSelect HelperText="Choose entity" T="string" Label="Vendor" Variant="Variant.Text"  @bind-Value="Item.VendorId">
+                @if(Vendors is not null) {
+                    @foreach (var vendor in Vendors)
+                    {
+                        <MudSelectItem Value="@vendor.Id"> @vendor.Code - @vendor.Name</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+
+            <MudTextField Label="Code" HelperText="Max. 15 characters" @bind-Value="Item.Code" For="@(() => Item.Code)" />
+            <MudTextField Label="Name" HelperText="Max. 100 characters" @bind-Value="Item.Name" For="@(() => Item.Name)" />
+            <MudTextField Label="Brand" HelperText="Max. 100 characters" @bind-Value="Item.Brand" For="@(() => Item.Brand)" />
+            <MudTextField Label="Description" HelperText="Max. 100 characters" @bind-Value="Item.Description" For="@(() => Item.Description)" />
+            <MudTextField Label="Base UOM" HelperText="Max. 100 characters" @bind-Value="Item.BaseUOM" For="@(() => Item.BaseUOM)" />
+            <MudTextField Label="Purchase UOM" HelperText="Max. 100 characters" @bind-Value="Item.PurchaseUOM" For="@(() => Item.PurchaseUOM)" />
+            <MudTextField Label="Transfer UOM" HelperText="Max. 100 characters" @bind-Value="Item.TransferUOM" For="@(() => Item.TransferUOM)" />
+
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto">@(action.ToLower() == "add" ? "Add" : "Save")</MudButton>
+            </MudCardActions>
+        </EditForm>
+    </MudPaper>
+</MudItem>
+
+ <MudItem xs="12" lg="4">
+    <MudPaper Elevation="25" Class="mb-2 mt-4 ms-2 p-5">
+    </MudPaper>
+</MudItem>
+
+</div>
+
+
+@code {
+
+    protected override async Task OnInitializedAsync()
+    {
+        if(!String.IsNullOrEmpty(Id))
+        {
+            Item = await GetItemAsync(Id);
+            Subgroups = await GetSubgroupsAsync();   
+        }
+        else
+        {
+            Subgroups = await GetSubgroupsAsync();
+            Vendors = await GetVendorsAsync();
+        }
+    }
+}
