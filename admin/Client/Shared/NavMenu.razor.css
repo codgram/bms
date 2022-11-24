@@ -65,3 +65,35 @@
         display: block;
     }
 }
+
+
+::deep .nav-item.has-submenu > a {
+    position: relative;
+}
+
+    ::deep .nav-item.has-submenu > a:after {
+        content: "\e02f";
+        position: absolute;
+        right: 15px;
+        color: white;
+        font-family: "Icons";
+        font-weight: 400;
+        font-size: 13px;
+        transform: rotateZ(90deg);
+        transform-origin: left;
+        transition: transform .5s ease;
+    }
+
+    ::deep .nav-item.has-submenu > a.collapsed:after {
+        transform: rotateZ(0deg);
+    }
+
+.nav-item ::deep .nav-submenu .nav-subitem a {
+    padding-left: 3rem;
+    text-decoration: none;
+}
+
+    .nav-item ::deep .nav-submenu .nav-subitem a i {
+        width: 2rem;
+        font-size: 1.1rem;
+    }

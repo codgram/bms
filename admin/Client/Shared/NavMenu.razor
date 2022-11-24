@@ -3,18 +3,17 @@
 
 <div class="top-row ps-3 navbar navbar-white">
     <div class="container-fluid">
-        @* <a class="navbar-brand" href="">Application</a> *@
         <div class="d-flex text-center" ><div class="w-32 h-32 d-flex text-center justify-content-center bg-dark text-light rounded p-1 me-2">
                 A
         </div>
-        <a class="navbar-brand font-semibold ms-1" href="" >@(!String.IsNullOrEmpty(CompanyName) ? CompanyName : "Application")</a></div>
+        <a class="navbar-brand font-semibold ms-1" href="" >@(!String.IsNullOrEmpty(CompanyName) ? CompanyName : "Admin")</a></div>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
             <span class="navbar-toggler-icon"></span>
         </button>
     </div>
 </div>
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu"> 
     <nav class="flex-column">
 
         <div class="nav-item px-3">
@@ -22,92 +21,126 @@
                 <span class="oi oi-home ms-2" aria-hidden="true"></span> Home
             </NavLink>
         </div>
-        @if(_stateContainer.Company is not null && String.IsNullOrEmpty(Module))
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" @onclick='@(() => _navigationManager.NavigateTo("org", true))'>
-                    <i class="bi bi-building ms-2 me-2" style="font-size:1.2rem"></i> Organization
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link"@onclick='@(() => _navigationManager.NavigateTo("pfm", true))'>
-                    <i class="bi bi-box ms-2 me-2" style="font-size:1.2rem"></i> Product Management
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" @onclick='@(() => _navigationManager.NavigateTo("work", true))'>
-                    <i class="bi bi-person-workspace ms-2 me-2" style="font-size:1.2rem"></i> Work Management
-                </NavLink>
-            </div>
-        }
-        
-        else if(_stateContainer.Company is not null && Module.ToLower() == "pfm")
-        {
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="pfm/divisions">
-                    <i class="bi bi-1-square ms-2 me-2" style="font-size:1.2rem"></i> Divisions
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="pfm/categories">
-                    <i class="bi bi-2-square ms-2 me-2" style="font-size:1.2rem"></i> Categories
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="pfm/groups">
-                    <i class="bi bi-3-square ms-2 me-2" style="font-size:1.2rem"></i> Groups
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="pfm/subgroups">
-                    <i class="bi bi-4-square ms-2 me-2" style="font-size:1.2rem"></i> Subgroups
-                </NavLink>
-            </div>
-            <div class="nav-item px-3">
-                <NavLink class="nav-link" href="pfm/items">
-                    <i class="bi bi-box ms-2 me-2" style="font-size:1.2rem"></i> Items
-                </NavLink>
-            </div>
-        }
 
-        else if(_stateContainer.Company is not null && Module.ToLower() == "org")
+        @if(_stateContainer.Company is not null) 
         {
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin")'>
                 <Authorized>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="org/entities">
-                            <i class="bi bi-building ms-2 me-2" style="font-size:1.2rem"></i> Entities
+                        <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick="()=>expandOrganization=!expandOrganization">
+                            <span class="bi bi-building mx-2" style="font-size:1.2rem"></span> Organization
                         </NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="org/stores">
-                            <i class="bi bi-shop ms-2 me-2" style="font-size:1.2rem"></i> Stores
-                        </NavLink>
-                    </div>
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="admin/users">
-                            <i class="bi bi-person ms-2 me-2" style="font-size:1.2rem"></i> Users
-                        </NavLink>
+                        @if (expandOrganization)
+                        {
+                            <div class="ms-3 border-start border-1">
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="org/entities">
+                                        <i class="bi bi-building ms-2 me-2" style="font-size:1.2rem"></i> Entities
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="org/stores">
+                                        <i class="bi bi-shop ms-2 me-2" style="font-size:1.2rem"></i> Stores
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="admin/users">
+                                        <i class="bi bi-person ms-2 me-2" style="font-size:1.2rem"></i> Users
+                                    </NavLink>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </Authorized>
             </AuthorizeView>
-        }
 
-        else if(_stateContainer.Company is not null && Module.ToLower() == "work")
-        {
+            <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Code}_Supply")'>
+                <Authorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick="()=>expandProcurement=!expandProcurement">
+                            <span class="bi bi-file-earmark mx-2" style="font-size:1.2rem"></span> Procurement
+                        </NavLink>
+                        @if (expandProcurement)
+                        {
+                            <div class="ms-3 border-start border-1">
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" Match="NavLinkMatch.All" href="procurement/vendors">
+                                        <i class="bi bi-file-earmark mx-2" style="font-size:1.2rem"></i> Vendors
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" Match="NavLinkMatch.All" href="procurement/purchase/headers">
+                                        <i class="bi bi-bag mx-2"  style="font-size:1.2rem"></i> Purchase Orders
+                                    </NavLink>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+
+            <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Code}_Pfm")'>
+                <Authorized>
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick="()=>expandProductManagement=!expandProductManagement">
+                            <span class="bi bi-box mx-2" style="font-size:1.2rem"></span> Product Management
+                        </NavLink>
+                        @if (expandProductManagement)
+                        {
+                            <div class="ms-3 border-start border-1">
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="pfm/divisions">
+                                        <i class="bi bi-1-square ms-2 me-2" style="font-size:1.2rem"></i> Divisions
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="pfm/categories">
+                                        <i class="bi bi-2-square ms-2 me-2" style="font-size:1.2rem"></i> Categories
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="pfm/groups">
+                                        <i class="bi bi-3-square ms-2 me-2" style="font-size:1.2rem"></i> Groups
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="pfm/subgroups">
+                                        <i class="bi bi-4-square ms-2 me-2" style="font-size:1.2rem"></i> Subgroups
+                                    </NavLink>
+                                </div>
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="pfm/items">
+                                        <i class="bi bi-box ms-2 me-2" style="font-size:1.2rem"></i> Items
+                                    </NavLink>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </Authorized>
+            </AuthorizeView>
 
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Code}_ReceivingAdmin")'>
                 <Authorized>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" href="works/custom/headers">
-                            <span class="oi oi-plus ms-2" aria-hidden="true"></span> Custom Works
+                        <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick="()=>expandWorkManagement=!expandWorkManagement">
+                            <span class="bi bi-file-earmark mx-2" style="font-size:1.2rem"></span> Work Management
                         </NavLink>
+                        @if (expandWorkManagement)
+                        {
+                            <div class="ms-3 border-start border-1">
+                                <div class="nav-item px-3">
+                                    <NavLink class="nav-link" href="works/custom/headers">
+                                        <span class="oi oi-plus ms-2" aria-hidden="true"></span> Custom Works
+                                    </NavLink>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </Authorized>
             </AuthorizeView>
+
+
         }
-
-
         
         
         
@@ -120,6 +153,10 @@
     [Parameter] public string CompanyName { get; set; }
         public string Module { get; set; } = "";
     private bool collapseNavMenu = true;
+    private bool expandOrganization = false;
+    private bool expandProcurement = false;
+    private bool expandProductManagement = false;
+    private bool expandWorkManagement = false;
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
