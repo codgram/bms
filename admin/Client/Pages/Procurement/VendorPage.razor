@@ -107,7 +107,7 @@
             if (response.IsSuccessStatusCode)
             {
                 _snackBar.Add("Vendor Updated Successfully", Severity.Success);
-                _navigationManager.NavigateTo("/pfm/vendors");
+                _navigationManager.NavigateTo("/procurement/vendors");
                 
                 // update vendor in list
                 var index = Vendors.FindIndex(x => x.Id == Vendor.Id);
