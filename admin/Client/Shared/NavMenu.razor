@@ -13,11 +13,11 @@
     </div>
 </div>
 
-<div class="@NavMenuCssClass" @onclick="ToggleNavMenu"> 
+<div class="@NavMenuCssClass"> 
     <nav class="flex-column">
 
         <div class="nav-item px-3">
-            <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick='@(() => _navigationManager.NavigateTo("/", true))'>
+            <NavLink class="nav-link" Match="NavLinkMatch.All">
                 <span class="oi oi-home ms-2" aria-hidden="true"></span> Home
             </NavLink>
         </div>
@@ -32,7 +32,7 @@
                         </NavLink>
                         @if (expandOrganization)
                         {
-                            <div class="ms-3 border-start border-1">
+                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu">
                                 <div class="nav-item px-3">
                                     <NavLink class="nav-link" href="org/entities">
                                         <i class="bi bi-building ms-2 me-2" style="font-size:1.2rem"></i> Entities
@@ -57,12 +57,12 @@
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Code}_Supply")'>
                 <Authorized>
                     <div class="nav-item px-3">
-                        <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick="()=>expandProcurement=!expandProcurement">
+                        <div class="nav-link" @onclick="()=>expandProcurement=!expandProcurement">
                             <span class="bi bi-file-earmark mx-2" style="font-size:1.2rem"></span> Procurement
-                        </NavLink>
+                        </div>
                         @if (expandProcurement)
                         {
-                            <div class="ms-3 border-start border-1">
+                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu">
                                 <div class="nav-item px-3">
                                     <NavLink class="nav-link" Match="NavLinkMatch.All" href="procurement/vendors">
                                         <i class="bi bi-file-earmark mx-2" style="font-size:1.2rem"></i> Vendors
@@ -87,7 +87,7 @@
                         </NavLink>
                         @if (expandProductManagement)
                         {
-                            <div class="ms-3 border-start border-1">
+                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu">
                                 <div class="nav-item px-3">
                                     <NavLink class="nav-link" href="pfm/divisions">
                                         <i class="bi bi-1-square ms-2 me-2" style="font-size:1.2rem"></i> Divisions
@@ -127,7 +127,7 @@
                         </NavLink>
                         @if (expandWorkManagement)
                         {
-                            <div class="ms-3 border-start border-1">
+                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu">
                                 <div class="nav-item px-3">
                                     <NavLink class="nav-link" href="works/custom/headers">
                                         <span class="oi oi-plus ms-2" aria-hidden="true"></span> Custom Works
