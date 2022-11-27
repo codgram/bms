@@ -174,6 +174,7 @@ public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
     public DbSet<Group> Group { get; set; }
     public DbSet<Subgroup> Subgroup { get; set; }
     public DbSet<Item> Item { get; set; }
+    public DbSet<Barcode> Barcode { get; set; }
     public DbSet<Vendor> Vendor { get; set; }
     public DbSet<PurchaseHeader> PurchaseHeader { get; set; }
     public DbSet<PurchaseLine> PurchaseLine { get; set; }
