@@ -1,5 +1,6 @@
 @page "/works/custom/{workHeaderId?}"
-@using Model.Work
+@using Application.Model.Work
+@using Application.Model.Enum
 @inject NavigationManager _navigationManager
 @inject StateContainer _stateContainer
 @inject ISnackbar _snackbar
@@ -11,7 +12,7 @@
 
 @if(String.IsNullOrEmpty(workHeaderId))
 {
-    <EditForm Model="CustomWorkHeader" OnValidSubmit="@CreateCustomWorkHeader">
+    @* <EditForm Model="CustomWorkHeader" OnValidSubmit="@CreateCustomWorkHeader">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
@@ -31,7 +32,7 @@
     
       </div>
 
-    </EditForm>
+    </EditForm> *@
     
 
 
@@ -41,7 +42,7 @@
 
     @if(CustomWorkHeaders is not null)
     {
-      foreach (var customWorkHeader in CustomWorkHeaders)
+      foreach (var customWorkHeader in CustomWorkHeaders.Where(c => c.Status == DocumentStatus.Open))
       {
 
         <a @onclick='@(() => SelectCustomWorkHeader(customWorkHeader.Id))' class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
