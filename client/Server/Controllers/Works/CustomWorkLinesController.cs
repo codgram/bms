@@ -122,13 +122,28 @@ namespace Application.Server.Controllers.Org
             if(CustomWorkLineBarcodeExists(customWorkLine.BarcodeNo))
             {
                 // edit line
-                var line = await _context.CustomWorkLine.Where(c => c.BarcodeNo == customWorkLine.BarcodeNo).FirstOrDefaultAsync();
+                var line = await _context.CustomWorkLine.Include(c => c.CustomWorkHeader).Where(c => c.BarcodeNo == customWorkLine.BarcodeNo).FirstOrDefaultAsync();
                 line.Quantity += customWorkLine.Quantity;
                 _context.Entry(line).State = EntityState.Modified;
                 
             }
             else
             {
+
+                // get customWorkHeader
+                var customWorkHeader = await _context.CustomWorkHeader.FindAsync(customWorkLine.CustomWorkHeaderId);
+
+                // get barcode
+                var barcode = await _context.Barcode.Include(b => b.Item).Where(b => b.CompanyId == customWorkHeader.CompanyId  && b.BarcodeNo == customWorkLine.BarcodeNo).FirstOrDefaultAsync();
+
+                if(barcode is not null)
+                {
+                    customWorkLine.ItemNo = barcode.Item.Code;
+                    customWorkLine.Description = barcode.Item.Brand + " - " + barcode.Item.Description;
+                    customWorkLine.Size = barcode.Item.Size;
+                }
+
+                
                 // add line
                 _context.CustomWorkLine.Add(customWorkLine);
             }
