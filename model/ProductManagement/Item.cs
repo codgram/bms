@@ -29,12 +29,14 @@ public class Item : Detail
     public string Code { get; set; }
 
     [Column(Order = 6)]
+    [StringLength(100)]
     public string Name { get; set; }
 
     [Column(Order = 7)]
     public string? Brand { get; set; }
 
     [Column(Order = 8)]
+    [StringLength(200)]
     public string? Description { get; set; }
 
     [Column(Order = 9)]
@@ -57,4 +59,39 @@ public class Item : Detail
 
     [Column(Order = 15)]
     public ItemStatus Status { get; set; }
+
+
+    public ItemType ConvertStringToItemType(string name) {
+
+        if(name.ToLower() == "0") {
+            return ItemType.Good;
+        }
+        else if(name.ToLower() == "1") {
+            return ItemType.Service;
+        }
+        else
+        {
+            return ItemType.Other;
+        }
+    }
+
+    public ItemStatus ConvertStringToItemStatus(string name) {
+
+        if(name.ToLower() == "0") {
+            return ItemStatus.Active;
+        }
+        else if(name.ToLower() == "1") {
+            return ItemStatus.Inactive;
+        }
+        else if(name.ToLower() == "2") {
+            return ItemStatus.OutOfStock;
+        }
+        else if(name.ToLower() == "3") {
+            return ItemStatus.Deleted;
+        }
+        else
+        {
+            return ItemStatus.Active;
+        }
+    }
 }
