@@ -13,6 +13,9 @@ public class CustomWorkLine : Detail
     // [Column(TypeName = "datetime")]
     public DateTime ExpiryDate { get; set; }
     public string BarcodeNo { get; set; }
+    public string? ItemNo { get; set; }
+    public string? Description { get; set; }
+    public string? Size { get; set; }
     public decimal Quantity { get; set; }
 
     
