@@ -119,11 +119,14 @@ namespace Application.Server.Controllers.Org
         [HttpPost]
         public async Task<ActionResult<CustomWorkLine>> PostCustomWorkLine(CustomWorkLine customWorkLine)
         {
-            if(CustomWorkLineBarcodeExists(customWorkLine.BarcodeNo))
+            if(CustomWorkLineBarcodeExists(customWorkLine.BarcodeNo, customWorkLine.CustomWorkHeaderId))
             {
                 // edit line
-                var line = await _context.CustomWorkLine.Include(c => c.CustomWorkHeader).Where(c => c.BarcodeNo == customWorkLine.BarcodeNo).FirstOrDefaultAsync();
+                var line = await _context.CustomWorkLine.Include(c => c.CustomWorkHeader)
+                                                        .Where(c => c.CustomWorkHeaderId == customWorkLine.CustomWorkHeaderId && c.BarcodeNo == customWorkLine.BarcodeNo)
+                                                        .FirstOrDefaultAsync();
                 line.Quantity += customWorkLine.Quantity;
+                
                 _context.Entry(line).State = EntityState.Modified;
                 
             }
@@ -191,9 +194,9 @@ namespace Application.Server.Controllers.Org
             return _context.CustomWorkLine.Any(e => e.Id == id);
         }
 
-        private bool CustomWorkLineBarcodeExists(string barcode)
+        private bool CustomWorkLineBarcodeExists(string barcode, string customWorkHeaderId)
         {
-            return _context.CustomWorkLine.Any(e => e.BarcodeNo == barcode);
+            return _context.CustomWorkLine.Any(e => e.CustomWorkHeaderId == customWorkHeaderId && e.BarcodeNo == barcode);
         }
     }
 
