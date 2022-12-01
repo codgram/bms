@@ -111,7 +111,7 @@ public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
         builder.Entity<Item>(entity =>
         {
             entity.HasOne(e => e.Company).WithMany().OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(e => e.Subgroup).WithMany().OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Subgroup).WithMany().OnDelete(DeleteBehavior.NoAction);
         });
 
         builder.Entity<Division>(entity =>
