@@ -16,16 +16,20 @@ public class ProductBase : ComponentBase
     [Parameter] public string action { get; set; }
     [Parameter] public string Id { get; set; }
     [Inject] public IJSRuntime _jsRuntime { get; set; }
-    [Inject] ISnackbar _snackBar { get; set; }
+    [Inject] public ISnackbar _snackBar { get; set; }
     [Inject] public NavigationManager _navigationManager { get; set; }
     [Inject] public StateContainer _stateContainer { get; set; }
     [Inject] public HttpClient _client { get; set; }
-    public string BlazorRocksText { get; set; } = "Blazor rocks the browser!";
 
+    [Inject] IHttpClientFactory ClientFactory { get; set; }
+
+    public MudTable<Item> table;
     public bool dense = false;
     public bool hover = true;
     public bool striped = false;
     public bool bordered = false;
+    public bool loading = false;
+    public string searchString = null;
     public string searchString1 = "";
     public Item selectedItem1 = null;
 
@@ -37,13 +41,20 @@ public class ProductBase : ComponentBase
     public List<Vendor> Vendors { get; set; }
 
 
-
-
     public bool FilterFunc1(Item Item) => FilterFunc(Item, searchString1);
 
-    public async Task<List<Item>> GetItemsAsync()
+    public async Task<MudBlazor.TableData<Item>> ServerReload(TableState state)
     {
-        return await _client.GetFromJsonAsync<List<Item>>($"api/items?companyId={_stateContainer.Company.Id}");
+        loading = true;
+        var data = await _client.GetFromJsonAsync<MudBlazor.TableData<Item>>($"api/items?companyId={_stateContainer.Company.Id}&page={state.Page}&pageSize={state.PageSize}&searchString={searchString}&sort={state.SortLabel}&sortDirection={state.SortDirection}");
+        loading = false;
+        return data;
+    }
+
+    public void OnSearch(string text)
+    {
+        searchString = text;
+        table.ReloadServerData();
     }
 
     public async Task<List<Subgroup>> GetSubgroupsAsync()
@@ -138,4 +149,9 @@ public class ProductBase : ComponentBase
     }
 
     
+
+    public void Export()
+    {
+        _navigationManager.NavigateTo($"api/items/export/csv?companyId={_stateContainer.Company.Id}&searchString={searchString}", true);
+    }
 }

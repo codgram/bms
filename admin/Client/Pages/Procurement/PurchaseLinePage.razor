@@ -1,0 +1,180 @@
+@page "/procurement/purchase/lines/{Id}"
+@using Model.Procurement
+@inherits ProcurementBase
+
+
+<h4 class="mt-5">Purchase Lines</h4>
+
+<MudPaper Elevation="25" Class="mb-2 mt-4">
+    <MudToolBar>
+        <MudText>
+            <Navigation />
+        </MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Outlined.Add" data-bs-toggle="offcanvas" OnClick='@(() => ResetObject("purchaseLine"))' data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions"/>
+        <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
+    </MudToolBar>
+</MudPaper>
+
+<MudGrid Spacing="1" Justify="Justify.Center">
+
+    @if(PurchaseHeader is not null)
+    {
+        <MudItem xs="12" lg="8">
+            <MudPaper Elevation="25" Class="mb-2 mt-4 ms-2 p-5">
+                <div class="d-flex justify-space-between mud-width-full">
+                    <div class="d-flex flex-column">
+                        <MudText Class="mud-text-h4 mud-text-bold mb-3">Order Details</MudText>
+                        <MudText Class="mud-text-h6 mud-text-bold mb-2"><strong class="me-2">Document No: </strong>@PurchaseHeader.DocumentNo</MudText>
+                        <MudText Class="mud-text-h6 mud-text-bold mb-2"><strong class="me-2">Vendor No: </strong>@PurchaseHeader?.Vendor?.Code</MudText>
+                        <MudText Class="mud-text-h6 mud-text-bold mb-2"><strong class="me-2">Expected On: </strong>@PurchaseHeader.ExpectedOn</MudText>
+                        <MudText Class="mud-text-h6 mud-text-bold mb-2"><strong class="me-2">Received No: </strong>@PurchaseHeader.ReceivedOn</MudText>
+                    </div>
+                </div>
+            </MudPaper>
+        </MudItem>
+    }
+    @if(PurchaseLines is not null)
+    {
+        <MudItem xs="12" lg="4">
+            <MudPaper Elevation="25" Class="mb-2 mt-4 ms-2 p-5">
+                <MudText Class="mud-text-h4 mud-text-bold mb-3">Line Details</MudText>
+                <MudText Class="mud-text-h6 mud-text-bold mb-2"><strong class="me-2">Lines Ordered: </strong>@PurchaseLines.Sum(p => p.OrderedQuantity)</MudText>
+                <MudText Class="mud-text-h6 mud-text-bold mb-2"><strong class="me-2">Lines Received: </strong>@PurchaseLines.Sum(p => p.ReceivedQuantity)</MudText>
+            </MudPaper>
+        </MudItem>
+    }
+
+
+
+</MudGrid>
+
+
+<MudTable Items="@PurchaseLines" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<PurchaseLine,bool>(FilterPurchaseLineFunc)" @bind-SelectedItem="SelectedPurchaseLine">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Lines</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <HeaderContent>
+        <MudTh>Line No</MudTh>
+        <MudTh>Item No</MudTh>
+        <MudTh>Desctiption</MudTh>
+        <MudTh>Size</MudTh>
+        <MudTh>Ordered Qty</MudTh>
+        <MudTh>Total Amount</MudTh>
+        <MudTh>Received Qty</MudTh>
+        <MudTh></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Line No">@context.LineNo</MudTd>
+        <MudTd DataLabel="Item No">@context.Item.Code</MudTd>
+        <MudTd DataLabel="Description">@context.Item.Description</MudTd>
+        <MudTd DataLabel="Size">@context.Item.Size</MudTd>
+        <MudTd DataLabel="Ordered Qty">@context.OrderedQuantity </MudTd>
+        <MudTd DataLabel="Unit Price">@context.UnitPrice</MudTd>
+        <MudTd DataLabel="Total Amount">@context.Total</MudTd>
+        <MudTd DataLabel="Received Qty">@context.ReceivedQuantity </MudTd>
+        <MudTd DataLabel="Edit">
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Disabled='@(context.PurchaseHeader.Status != DocumentStatus.Open ? true : false )' OnClick='@(() => GetPurchaseLineAsync(context.Id))' data-bs-toggle="offcanvas"  data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions"/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" Disabled='@(context.PurchaseHeader.Status != DocumentStatus.Open ? true : false )' OnClick='@(() => OnDeleteAsync(context.Id, "purchase/headers"))' />
+        </MudTd>
+    </RowTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+<div class="d-flex flex-wrap mt-4">
+    <div style="min-width:200px;">
+        <MudText Inline="true" Class="align-self-center">Selected1: @SelectedPurchaseLine?.LineNo</MudText>
+    </div>
+</div>
+
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offcanvasWithBothOptions" aria-labelledby="offcanvasWithBothOptionsLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offcanvasWithBothOptionsLabel">Create a new Line</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close" OnClick='@(() => ResetObject("purchaseLine"))'></button>
+  </div>
+  <div class="offcanvas-body">
+    
+
+    <EditForm Model="@PurchaseLineDetail" OnValidSubmit="OnValidSubmit" OnInvalidSubmit="OnInValidSubmit">
+        <DataAnnotationsValidator/>
+
+        <MudTextField Label="Item Code" HelperText="Max. 15 characters" Disabled='@(SubmitButtonText == "Save" ? true : false)' @bind-Value="PurchaseLineDetail.ItemCode" For="@(() => PurchaseLineDetail.ItemCode)" />
+        <MudTextField Label="Quantity" HelperText="Max. 15 characters" Disabled='@(SubmitButtonText == "Save" ? true : false)' @bind-Value="PurchaseLineDetail.OrderedQuantity" For="@(() => PurchaseLineDetail.OrderedQuantity)" />
+        <MudTextField Label="Unit Price" HelperText="Max. 15 characters" Disabled='@(SubmitButtonText == "Save" ? true : false)' @bind-Value="PurchaseLineDetail.UnitPrice" For="@(() => PurchaseLineDetail.UnitPrice)" />
+
+
+            
+        <MudCardActions>
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" data-bs-dismiss="offcanvas" aria-label="Close" >@SubmitButtonText</MudButton>
+        </MudCardActions>
+    </EditForm>
+
+
+  </div>
+</div>
+
+
+
+@code {
+
+    [Parameter] public string Id { get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        SubmitButtonText = "Add";
+        await GetPurchaseHeaderAsync(Id);
+        PurchaseLines = await GetObjectsAsync<PurchaseLine>("purchase/lines", $"purchaseHeaderId={Id}");
+    }
+
+
+    public async Task OnValidSubmit()
+    {
+        if (SubmitButtonText.ToLower() == "add")
+        {
+            PurchaseLineDetail.PurchaseHeaderId = Id;
+            var response = await _client.PostAsJsonAsync<PurchaseLineDetail>($"api/purchase/lines?companyId={PurchaseHeader.CompanyId}", PurchaseLineDetail);
+            if (response.IsSuccessStatusCode)
+            {
+                _snackBar.Add("PurchaseLine Added Successfully", Severity.Success);
+                _navigationManager.NavigateTo("/procurement/purchase/headers");
+
+                // get purchase header from response
+                var purchaseLine = await response.Content.ReadFromJsonAsync<PurchaseLine>();
+
+                PurchaseLines.Add(purchaseLine);
+            }
+            else if(response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                // get error message from response
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                
+                _snackBar.Add(errorMessage, Severity.Error);
+            }
+            else
+            {
+                _snackBar.Add("Purchase Order Add Failed", Severity.Error);
+            }
+        }
+        else if (SubmitButtonText.ToLower() == "save")
+        {
+            var response = await _client.PutAsJsonAsync<PurchaseLine>($"api/purchase/lines/{PurchaseLine.Id}", PurchaseLine);
+            if (response.IsSuccessStatusCode)
+            {
+                _snackBar.Add("PurchaseLine Updated Successfully", Severity.Success);
+                _navigationManager.NavigateTo("/procurement/purchase/headers");
+                
+                // update purchaseLine in list
+                var index = PurchaseLines.FindIndex(x => x.Id == PurchaseLine.Id);
+                PurchaseLines[index] = PurchaseLine;
+            }
+            else
+            {
+                _snackBar.Add("Purchase Order Update Failed", Severity.Error);
+            }
+        }
+    }
+}

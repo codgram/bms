@@ -6,34 +6,19 @@ using Microsoft.EntityFrameworkCore;
 namespace Application.Model.Procurement;
 
 
-
-public class PurchaseLine : Detail
+[Keyless]
+public class PurchaseLineDetail : Detail
 {
-    [Key]
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    public string? Id { get; set; }
 
     public string PurchaseHeaderId { get; set; }
     public PurchaseHeader? PurchaseHeader { get; set; }
 
     public int LineNo { get; set; }
-
-    [Required]
-    public string? ItemId { get; set; }
-    public Item? Item { get; set; }
+    public string ItemCode { get; set; }
 
     public decimal OrderedQuantity { get; set; }
     public decimal ReceivedQuantity { get; set; }
-
     public decimal UnitPrice { get; set; }
-
-    public decimal Total
-    {
-        get
-        {
-            return OrderedQuantity * UnitPrice;
-        }
-    }
 
 
 

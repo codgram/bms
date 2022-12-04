@@ -95,6 +95,12 @@ namespace Application.Server.Controllers.Works
         [HttpPost]
         public async Task<ActionResult<CustomWorkHeader>> PostCustomWorkHeader(CustomWorkHeader customWorkHeader)
         {
+
+            if(DocumentNoExists(customWorkHeader.DocumentNo, customWorkHeader.CompanyId))
+            {
+                return BadRequest("Document No already exists");
+            }
+
             _context.CustomWorkHeader.Add(customWorkHeader);
             try
             {
@@ -136,6 +142,11 @@ namespace Application.Server.Controllers.Works
         private bool CustomWorkHeaderExists(string id)
         {
             return _context.CustomWorkHeader.Any(e => e.Id == id);
+        }
+
+        private bool DocumentNoExists(string documentNo, string companyId)
+        {
+            return _context.CustomWorkHeader.Any(e => e.DocumentNo == documentNo && e.CompanyId == companyId);
         }
     }
 }

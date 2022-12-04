@@ -16,9 +16,9 @@
 <div class="@NavMenuCssClass"> 
     <nav class="flex-column">
 
-        <div class="nav-item px-3">
+        <div class="nav-item px-3" role="button">
             <NavLink class="nav-link" Match="NavLinkMatch.All">
-                <span class="oi oi-home ms-2" aria-hidden="true"></span> Home
+                <strong><span class="bi bi-house mx-2" style="font-size:1.2rem;"></span></strong> Home
             </NavLink>
         </div>
 
@@ -26,13 +26,13 @@
         {
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin")'>
                 <Authorized>
-                    <div class="nav-item px-3">
+                    <div class="nav-item px-3" role="button">
                         <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick="()=>expandOrganization=!expandOrganization">
                             <span class="bi bi-building mx-2" style="font-size:1.2rem"></span> Organization
                         </NavLink>
                         @if (expandOrganization)
                         {
-                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu">
+                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu" role="button">
                                 <div class="nav-item px-3">
                                     <NavLink class="nav-link" href="org/entities">
                                         <i class="bi bi-building ms-2 me-2" style="font-size:1.2rem"></i> Entities
@@ -56,13 +56,13 @@
 
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Code}_Supply")'>
                 <Authorized>
-                    <div class="nav-item px-3">
-                        <div class="nav-link" @onclick="()=>expandProcurement=!expandProcurement">
+                    <div class="nav-item px-3" role="button">
+                        <NavLink class="nav-link" @onclick="()=>expandProcurement=!expandProcurement">
                             <span class="bi bi-file-earmark mx-2" style="font-size:1.2rem"></span> Procurement
-                        </div>
+                        </NavLink>
                         @if (expandProcurement)
                         {
-                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu">
+                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu" role="button">
                                 <div class="nav-item px-3">
                                     <NavLink class="nav-link" Match="NavLinkMatch.All" href="procurement/vendors">
                                         <i class="bi bi-file-earmark mx-2" style="font-size:1.2rem"></i> Vendors
@@ -81,13 +81,13 @@
 
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Code}_Pfm")'>
                 <Authorized>
-                    <div class="nav-item px-3">
+                    <div class="nav-item px-3" role="button">
                         <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick="()=>expandProductManagement=!expandProductManagement">
                             <span class="bi bi-box mx-2" style="font-size:1.2rem"></span> Product Management
                         </NavLink>
                         @if (expandProductManagement)
                         {
-                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu">
+                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu" role="button">
                                 <div class="nav-item px-3">
                                     <NavLink class="nav-link" href="pfm/divisions">
                                         <i class="bi bi-1-square ms-2 me-2" style="font-size:1.2rem"></i> Divisions
@@ -121,13 +121,13 @@
 
             <AuthorizeView Roles='@($"{_stateContainer.Company.Code}_Owner, {_stateContainer.Company.Code}_Admin, {_stateContainer.Company.Code}_ReceivingAdmin")'>
                 <Authorized>
-                    <div class="nav-item px-3">
+                    <div class="nav-item px-3" role="button">
                         <NavLink class="nav-link" Match="NavLinkMatch.All" @onclick="()=>expandWorkManagement=!expandWorkManagement">
                             <span class="bi bi-file-earmark mx-2" style="font-size:1.2rem"></span> Work Management
                         </NavLink>
                         @if (expandWorkManagement)
                         {
-                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu">
+                            <div class="ms-3 border-start border-1" @onclick="ToggleNavMenu" role="button">
                                 <div class="nav-item px-3">
                                     <NavLink class="nav-link" href="works/custom/headers">
                                         <span class="oi oi-plus ms-2" aria-hidden="true"></span> Custom Works

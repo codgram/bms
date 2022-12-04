@@ -161,15 +161,15 @@ namespace Application.Server.Controllers.Works
         [HttpGet("export/csv")]
         public async Task<FileContentResult> ExportCustomWorkLines(string customWorkHeaderId = "")
         {
-
+            
             var items = await _context.CustomWorkLine.Include(c => c.CustomWorkHeader).Where(c => c.CustomWorkHeaderId == customWorkHeaderId).ToListAsync();
-
+            var customWorkHeader = await _context.CustomWorkHeader.FindAsync(items.FirstOrDefault().CustomWorkHeaderId);
 
             StringBuilder sb = new StringBuilder();
 
             // var headers = typeof(CustomWorkLine).GetProperties().Select(property => property.Name).ToArray();
 
-            var headers = new string[] { "Barcode", "Quantity"};
+            var headers = new string[] { "Barcode", "Item No", "Description", "Size", "Quantity"};
 
             for(int i = 0; i < headers.Length; i++)
             {
@@ -181,11 +181,14 @@ namespace Application.Server.Controllers.Works
             foreach (var i in items.ToArray())
             {
                 sb.Append(i.BarcodeNo.ToString() + ",");
+                sb.Append(i.ItemNo + ",");
+                sb.Append(!String.IsNullOrEmpty(i.Description) ? i.Description.Replace(",", "") : "" + ",");
+                sb.Append(i.Size+ ",");
                 sb.Append(i.Quantity + ",");
                 sb.Append("\r\n");
             }
 
-            return File(Encoding.ASCII.GetBytes(sb.ToString()), "text/csv", $"custom-work-lines.txt");
+            return File(Encoding.ASCII.GetBytes(sb.ToString()), "text/csv", $"{customWorkHeader.Id}-{customWorkHeader.DocumentNo}-{customWorkHeader.CreatedOn}.txt");
         }
 
 
