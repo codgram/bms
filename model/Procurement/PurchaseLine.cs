@@ -25,6 +25,16 @@ public class PurchaseLine : Detail
     public decimal OrderedQuantity { get; set; }
     public decimal ReceivedQuantity { get; set; }
 
+    public decimal UnitPrice { get; set; }
+
+    public decimal Total
+    {
+        get
+        {
+            return OrderedQuantity * UnitPrice;
+        }
+    }
+
 
 
 
