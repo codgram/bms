@@ -8,6 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Application.Model.ProductManagement;
 using Application.Server.Data;
+using Application.Model;
+using Application.Model.Enum;
+using System.Text;
 
 namespace Application.Server.Controllers.ProductManagement
 {
@@ -99,6 +102,26 @@ namespace Application.Server.Controllers.ProductManagement
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpGet("export/csv")]
+        public async Task<FileContentResult> ExportCustomWorkLines([FromQuery] string companyId, [FromQuery] string? searchString)
+        {
+            var items = await _context.Item.Include(i => i.Subgroup).Include(i => i.Vendor)
+                                        .Where(i => i.CompanyId == companyId)
+                                        .Where(i => !String.IsNullOrEmpty(searchString) ? i.Code.Contains(searchString) || i.Brand.Contains(searchString) || i.Description.Contains(searchString) || i.Size.Contains(searchString) : true)
+                                        .OrderBy(i => i.Code)
+                                        .ToListAsync();
+
+            var csv = new StringBuilder();
+            csv.AppendLine("Code,Name,Brand,Description,Size,Subgroup,Vendor,Unit,Price,Stock");
+
+            foreach (var item in items)
+            {
+                csv.AppendLine($"{item.Code},{item.Name},{item.Brand},{item.Description},{item.Size},{item.Subgroup.Name},{item.Vendor.Name}");
+            }
+
+            return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", "items.csv");
         }
 
         private bool ItemExists(string id)

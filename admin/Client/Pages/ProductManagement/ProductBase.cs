@@ -138,4 +138,9 @@ public class ProductBase : ComponentBase
     }
 
     
+
+    public void Export()
+    {
+        _navigationManager.NavigateTo($"api/items/export/csv?companyId={_stateContainer.Company.Id}&searchString={searchString}", true);
+    }
 }
