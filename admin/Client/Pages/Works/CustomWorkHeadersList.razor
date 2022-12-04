@@ -28,18 +28,20 @@
         <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
     <HeaderContent>
+        <MudTh>Created On</MudTh>
         <MudTh>Document No</MudTh>
         <MudTh>Status</MudTh>
-        <MudTh></MudTh>
+        <MudTh Class="text-end pe-8">Options</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="DocumentNo">@context.DocumentNo</MudTd>
+        <MudTd DataLabel="Created On">@context.CreatedOn</MudTd>
+        <MudTd DataLabel="Document No">@context.DocumentNo</MudTd>
         <MudTd DataLabel="Status">@context.Status</MudTd>
         <MudTd DataLabel="Action" Class="text-end">
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Rocket" OnClick='@(() => OnPostAsync(context.Id))'/>
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.OpenInNew" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/details"))'/>
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/edit"))'/>
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" />
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Rocket" Color="Color.Primary" OnClick='@(() => OnPostAsync(context.Id))'/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.OpenInNew" Color="Color.Inherit" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/details"))'/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" Color="Color.Inherit" OnClick='@(() => Navigate($"works/custom/headers/{context.Id}/edit"))'/>
+            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Error" OnClick="@(() => OnDeleteAsync(context.Id))" />
         </MudTd>
     </RowTemplate>
     <PagerContent>
@@ -69,6 +71,7 @@
     protected override async Task OnInitializedAsync()
     {
         CustomWorkHeaders = await _client.GetFromJsonAsync<List<CustomWorkHeader>>("api/works/custom/headers");
+        CustomWorkHeaders = CustomWorkHeaders.OrderByDescending(c => c.CreatedOn).ToList();
     }
 
     private bool FilterFunc1(CustomWorkHeader CustomWorkHeader) => FilterFunc(CustomWorkHeader, searchString1);
@@ -77,7 +80,11 @@
     {
         if (string.IsNullOrWhiteSpace(searchString))
             return true;
+        if (CustomWorkHeader.Id.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
         if (CustomWorkHeader.DocumentNo.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (CustomWorkHeader.Status.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
             return true;
         return false;
     }
