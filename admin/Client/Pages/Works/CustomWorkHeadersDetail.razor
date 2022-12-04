@@ -43,12 +43,18 @@
     </ToolBarContent>
     <HeaderContent>
         <MudTh>Barcode No</MudTh>
+        <MudTh>Item No</MudTh>
+        <MudTh>Description</MudTh>
+        <MudTh>Size</MudTh>
         <MudTh>Expiry Date</MudTh>
         <MudTh>Quantity</MudTh>
         <MudTh></MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd DataLabel="BarcodeNo">@context.BarcodeNo</MudTd>
+        <MudTd DataLabel="Barcode No">@context.BarcodeNo</MudTd>
+        <MudTd DataLabel="Item No">@context.ItemNo</MudTd>
+        <MudTd DataLabel="Description">@context.Description</MudTd>
+        <MudTd DataLabel="Size">@context.Size</MudTd>
         <MudTd DataLabel="ExpiryDate">@context.ExpiryDate.ToString("dd/MM/yyyy")</MudTd>
         <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
         <MudTd DataLabel="Action" Class="text-end">
