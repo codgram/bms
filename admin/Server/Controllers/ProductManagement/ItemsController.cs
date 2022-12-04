@@ -27,16 +27,54 @@ namespace Application.Server.Controllers.ProductManagement
 
         // GET: api/Item
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Item>>> GetItems([FromQuery] string companyId)
+        public async Task<ActionResult<TableData<Item>>> GetItems([FromQuery] string companyId, [FromQuery] int page, [FromQuery] int pageSize, [FromQuery] string? searchString, [FromQuery] string sort, [FromQuery] string sortDirection)
         {
-            return await _context.Item.Include(i => i.Subgroup).Where(i => i.CompanyId == companyId).ToListAsync();
+
+            DataState state = new DataState();
+
+            state.Page = page;
+            state.PageSize= pageSize;
+            state.SortLabel = sort;
+            state.SortDirection = (SortDirection)Enum.Parse(typeof(SortDirection), sortDirection);
+
+            List<Item> data;
+
+            if(state.SortDirection == SortDirection.Descending)
+            {
+                data =  await _context.Item.Include(i => i.Subgroup).Include(i => i.Vendor)
+                                        .OrderByDescending(i => sort == "code" ? i.Code : sort == "name" ? i.Name : sort == "subgroup" ? i.Subgroup.Name : sort == "vendor" ? i.Vendor.Name : i.Code)
+                                        .Where(i => i.CompanyId == companyId)
+                                        .Where(i => !String.IsNullOrEmpty(searchString) ? i.Code.Contains(searchString) || i.Brand.Contains(searchString) || i.Description.Contains(searchString) || i.Size.Contains(searchString) : true)
+                                        .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                                        .ToListAsync();
+            }
+            else
+            {
+                data =  await _context.Item.Include(i => i.Subgroup).Include(i => i.Vendor)
+                                        .OrderBy(i => sort == "code" ? i.Code : sort == "name" ? i.Name : sort == "subgroup" ? i.Subgroup.Name : sort == "vendor" ? i.Vendor.Name : i.Code)
+                                        .Where(i => i.CompanyId == companyId)
+                                        .Where(i => !String.IsNullOrEmpty(searchString) ? i.Code.Contains(searchString) || i.Brand.Contains(searchString) || i.Description.Contains(searchString) || i.Size.Contains(searchString) : true)
+                                        .Skip(state.Page * state.PageSize).Take(state.PageSize)
+                                        .ToListAsync();
+            }
+            
+
+            var totalItems = await _context.Item
+                                        .Where(i => i.CompanyId == companyId)
+                                        .Where(i => !String.IsNullOrEmpty(searchString) ? i.Code.Contains(searchString) || i.Brand.Contains(searchString) || i.Description.Contains(searchString) || i.Size.Contains(searchString) : true)
+                                        .CountAsync();
+
+            return new TableData<Item>() {TotalItems = totalItems, Items = data};
+
+            
         }
+
 
         // GET: api/Item/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Item>> GetItem(string id)
+        public async Task<ActionResult<Item>> GetItem(string id, string? subgroup, string? vendor)
         {
-            var item = await _context.Item.FindAsync(id);
+            var item = await _context.Item.Include(i => i.Subgroup).Include(i => i.Vendor).FirstOrDefaultAsync(i => i.Id == id);
 
             if (item == null)
             {
@@ -82,10 +120,21 @@ namespace Application.Server.Controllers.ProductManagement
         [HttpPost]
         public async Task<ActionResult<Item>> PostItem(Item item)
         {
+            // if item code exists update the item
+            if(ItemCodeExists(item.Code, item.CompanyId))
+            {
+                await PutItem(item.Id, item);
+            }
+            
             _context.Item.Add(item);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetItem", new { id = item.Id }, item);
+            // subgroup of the item
+            var subgroup = await _context.Subgroup.FindAsync(item.SubgroupId);
+            // vendor of the item
+            var vendor = await _context.Vendor.FindAsync(item.VendorId);
+
+            return CreatedAtAction("GetItem", new { id = item.Id, subgroup = subgroup, vendor = vendor }, item);
         }
 
         // DELETE: api/Item/5
@@ -127,6 +176,11 @@ namespace Application.Server.Controllers.ProductManagement
         private bool ItemExists(string id)
         {
             return _context.Item.Any(e => e.Id == id);
+        }
+
+        private bool ItemCodeExists(string companyId, string code)
+        {
+            return _context.Item.Any(e => e.CompanyId == companyId && e.Code == code);
         }
     }
 }
