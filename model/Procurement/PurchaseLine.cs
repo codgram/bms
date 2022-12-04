@@ -44,7 +44,14 @@ public class PurchaseLine : Detail
         var purchaseLines = await context.PurchaseLine.Where(r => r.PurchaseHeaderId == purchaseHeaderId).ToListAsync();
         var maxLine = purchaseLines.Select(r => r.LineNo).Max();
 
-        return maxLine + 1;
+        if(purchaseLines == null)
+        {
+            return 1;
+        }
+        else
+        {
+            return maxLine + 1;
+        }
     }
     
 }
