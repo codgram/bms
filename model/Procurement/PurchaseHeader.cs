@@ -19,8 +19,8 @@ public class PurchaseHeader : Detail
 
     public string DocumentNo { get; set; }
 
-    public DateTime ExpectedOn { get; set; }
-    public DateTime ReceivedOn { get; set; }
+    public DateTime? ExpectedOn { get; set; }
+    public DateTime? ReceivedOn { get; set; }
 
     public DocumentStatus Status { get; set; }
     
