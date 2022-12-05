@@ -158,7 +158,7 @@ namespace Application.Server.Controllers.Works
         }
 
 
-        [HttpGet("export/csv")]
+        [HttpPost("export/csv")]
         public async Task<FileContentResult> ExportCustomWorkLines(string customWorkHeaderId = "")
         {
             
