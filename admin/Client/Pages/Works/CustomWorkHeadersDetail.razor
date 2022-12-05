@@ -157,6 +157,20 @@
 
     public async void ExportAsync()
     {
-        _navigationManager.NavigateTo($"api/works/custom/lines/export/csv?customWorkHeaderId={CustomWorkHeader.Id}", true);
+        var request = await _client.PostAsJsonAsync($"api/works/custom/lines/export/csv?customWorkHeaderId={CustomWorkHeader.Id}", CustomWorkHeader.Id);
+        if(request.IsSuccessStatusCode)
+        {
+            Snackbar.Add($"Export has Started", Severity.Info);
+            var data = await request.Content.ReadAsStringAsync();
+            var fileName = $"CustomWorkLines_{CustomWorkHeader.Id}.txt";
+            await _jsRuntime.InvokeVoidAsync("saveAsFile", fileName, "txt", data);
+        }
+        else
+        {
+            Snackbar.Add($"Export is failed", Severity.Error);
+        }
+
+        Snackbar.Add($"Export has finished", Severity.Success);
+
     }
 }
