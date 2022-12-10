@@ -118,7 +118,7 @@ else {
 
         @if(CustomWorkLinesFiltered is not null)
         {
-            @foreach (var line in CustomWorkLinesFiltered)
+            @foreach (var line in CustomWorkLinesFiltered.OrderByDescending(c => c.CreatedOn))
             {
                 <a class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true" @onclick="@(() => DeleteLoadLine(line))">
                   <div class="d-flex gap-2 w-100 justify-content-between">
