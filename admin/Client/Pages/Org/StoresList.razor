@@ -68,7 +68,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        Stores = await _client.GetFromJsonAsync<List<Store>>("api/store");
+        Stores = await _client.GetFromJsonAsync<List<Store>>("api/store?companyId={_stateContainer.Company.Id");
     }
 
     private bool FilterFunc1(Store Store) => FilterFunc(Store, searchString1);

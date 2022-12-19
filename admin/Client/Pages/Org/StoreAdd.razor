@@ -54,7 +54,7 @@
     
     protected override async Task OnInitializedAsync()
     {
-        Entities = await _client.GetFromJsonAsync<List<Entity>>("/api/entity");
+        Entities = await _client.GetFromJsonAsync<List<Entity>>($"api/entity?companyId={_stateContainer.Company.Id}");
     }
 
     
