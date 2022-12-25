@@ -61,6 +61,23 @@ public class Item : Detail
     public ItemStatus Status { get; set; }
 
 
+    public ICollection<SalesPrice>? SalesPrices { get; set; }
+
+
+
+
+    // Not Mapped objects
+
+    [NotMapped]
+    public decimal SalesPrice { get; set; }
+
+    
+
+
+
+
+
+
     public ItemType ConvertStringToItemType(string name) {
 
         if(name.ToLower() == "0") {
