@@ -123,11 +123,16 @@ namespace Application.Server.Controllers.ProductManagement
             // if item code exists update the item
             if(ItemCodeExists(item.Code, item.CompanyId))
             {
+                item = await _context.Item.FirstOrDefaultAsync(i => i.Code == item.Code && i.CompanyId == item.CompanyId);
                 await PutItem(item.Id, item);
             }
+            else
+            {
+                _context.Item.Add(item);
+                await _context.SaveChangesAsync();
+            }
             
-            _context.Item.Add(item);
-            await _context.SaveChangesAsync();
+            
 
             // subgroup of the item
             var subgroup = await _context.Subgroup.FindAsync(item.SubgroupId);
@@ -178,7 +183,7 @@ namespace Application.Server.Controllers.ProductManagement
             return _context.Item.Any(e => e.Id == id);
         }
 
-        private bool ItemCodeExists(string companyId, string code)
+        private bool ItemCodeExists(string code, string companyId)
         {
             return _context.Item.Any(e => e.CompanyId == companyId && e.Code == code);
         }
