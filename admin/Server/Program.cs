@@ -6,8 +6,18 @@ using Microsoft.AspNetCore.Identity;
 using Application.Model.Org;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using Application.Model;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var  MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
+// get allowed origins from appsettings.json
+
+var cors = new Cors();
+var section = builder.Configuration.GetSection("Cors");
+cors = section.Get<Cors>();
+
 
 // Add services to the container.
 var applicationConnectionString = builder.Configuration.GetConnectionString("ApplicationConnection");
@@ -35,11 +45,22 @@ builder.Services.AddIdentityServer()
 builder.Services.Configure<IdentityOptions>(options => 
     options.ClaimsIdentity.UserIdClaimType = ClaimTypes.NameIdentifier);
 
-// builder.Services.AddIdentityServer()
-//     .AddApiAuthorization<ApplicationUser, ApplicationDbContext>();
+
 
 builder.Services.AddAuthentication()
     .AddIdentityServerJwt();
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: MyAllowSpecificOrigins,
+                      policy  =>
+                      {
+                          policy.WithOrigins(cors.Origins);
+                                // .AllowAnyHeader()
+                                // .AllowAnyMethod();
+                      });
+});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
@@ -65,6 +86,8 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
+
+app.UseCors(MyAllowSpecificOrigins);
 
 app.UseIdentityServer();
 app.UseAuthentication();

@@ -24,9 +24,9 @@ namespace Application.Server.Controllers.Org
 
         // GET: api/Entity
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Entity>>> GetEntity()
+        public async Task<ActionResult<IEnumerable<Entity>>> GetEntities([FromQuery] string companyId)
         {
-            return await _context.Entity.OrderBy(e => e.Code).ToListAsync();
+            return await _context.Entity.Where(e => e.CompanyId == companyId).OrderBy(e => e.Code).ToListAsync();
         }
 
         // GET: api/Entity/5

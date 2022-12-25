@@ -41,7 +41,9 @@ namespace Application.Server.Controllers.ProductManagement
 
             if(state.SortDirection == SortDirection.Descending)
             {
-                data =  await _context.Item.Include(i => i.Subgroup).Include(i => i.Vendor)
+                data =  await _context.Item.Include(i => i.Subgroup).ThenInclude(s => s.Group).ThenInclude(g => g.Category).ThenInclude(c => c.Division)
+                                        .Include(i => i.Vendor)
+                                        .Include(i => i.SalesPrices.Where(s => s.Status == LineStatus.Active))
                                         .OrderByDescending(i => sort == "code" ? i.Code : sort == "name" ? i.Name : sort == "subgroup" ? i.Subgroup.Name : sort == "vendor" ? i.Vendor.Name : i.Code)
                                         .Where(i => i.CompanyId == companyId)
                                         .Where(i => !String.IsNullOrEmpty(searchString) ? i.Code.Contains(searchString) || i.Brand.Contains(searchString) || i.Description.Contains(searchString) || i.Size.Contains(searchString) : true)
@@ -50,7 +52,9 @@ namespace Application.Server.Controllers.ProductManagement
             }
             else
             {
-                data =  await _context.Item.Include(i => i.Subgroup).Include(i => i.Vendor)
+                data =  await _context.Item.Include(i => i.Subgroup).ThenInclude(s => s.Group).ThenInclude(g => g.Category).ThenInclude(c => c.Division)
+                                        .Include(i => i.Vendor)
+                                        .Include(i => i.SalesPrices.Where(s => s.Status == LineStatus.Active))
                                         .OrderBy(i => sort == "code" ? i.Code : sort == "name" ? i.Name : sort == "subgroup" ? i.Subgroup.Name : sort == "vendor" ? i.Vendor.Name : i.Code)
                                         .Where(i => i.CompanyId == companyId)
                                         .Where(i => !String.IsNullOrEmpty(searchString) ? i.Code.Contains(searchString) || i.Brand.Contains(searchString) || i.Description.Contains(searchString) || i.Size.Contains(searchString) : true)
@@ -123,11 +127,16 @@ namespace Application.Server.Controllers.ProductManagement
             // if item code exists update the item
             if(ItemCodeExists(item.Code, item.CompanyId))
             {
+                item = await _context.Item.FirstOrDefaultAsync(i => i.Code == item.Code && i.CompanyId == item.CompanyId);
                 await PutItem(item.Id, item);
             }
+            else
+            {
+                _context.Item.Add(item);
+                await _context.SaveChangesAsync();
+            }
             
-            _context.Item.Add(item);
-            await _context.SaveChangesAsync();
+            
 
             // subgroup of the item
             var subgroup = await _context.Subgroup.FindAsync(item.SubgroupId);
@@ -178,7 +187,7 @@ namespace Application.Server.Controllers.ProductManagement
             return _context.Item.Any(e => e.Id == id);
         }
 
-        private bool ItemCodeExists(string companyId, string code)
+        private bool ItemCodeExists(string code, string companyId)
         {
             return _context.Item.Any(e => e.CompanyId == companyId && e.Code == code);
         }

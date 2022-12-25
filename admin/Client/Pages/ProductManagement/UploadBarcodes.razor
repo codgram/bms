@@ -1,0 +1,161 @@
+@page "/pfm/barcodes/upload"
+@using Microsoft.Extensions.Logging
+@using System.Net.Http.Headers
+@inject HttpClient _client
+@inject ISnackbar Snackbar
+
+
+
+
+<MudPaper @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass" Height="300px" Outlined="true" Class="@DragClass">
+    @if (!Clearing)
+    {
+        <InputFile OnChange="OnInputFileChanged" multiple  class="absolute mud-width-full mud-height-full overflow-hidden z-2" style="opacity:0;" />
+    }
+    <MudText Typo="Typo.h6">Drag and drop files here or click</MudText>
+    @foreach (var file in fileNames)
+    {
+        <MudChip Color="Color.Dark" Text="@file" />
+    }
+</MudPaper>
+<MudToolBar DisableGutters="true" Class="gap-4">
+    <MudButton OnClick="Upload" Disabled="@(!fileNames.Any())" Color="Color.Primary" Variant="Variant.Filled">Upload</MudButton>
+    <MudButton OnClick="Clear" Disabled="@(!fileNames.Any())" Color="Color.Error" Variant="Variant.Filled">Clear</MudButton>
+</MudToolBar>
+
+@if (isLoading)
+{
+    <p>@Message</p>
+    <div class="progress">
+        <div class="progress-bar" role="progressbar" style='@($"width: {Progress}%;")' aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress %</div>
+    </div>
+}
+
+
+@code {
+
+    private bool Clearing = false;
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full";
+    private string DragClass = DefaultDragClass;
+    private List<string> fileNames = new List<string>();
+
+
+    private string Message { get; set; } = "";
+    private string Progress { get; set; } = "";
+    private string StartTime { get; set; }    
+    private string EndTime { get; set; }    
+
+    private List<IBrowserFile> loadedFiles = new();
+    private IBrowserFile file {get; set;}
+    private long maxFileSize = 1024 * 10000;
+    private int maxAllowedFiles = 3;
+    private bool isLoading;
+    private StreamContent fileContent { get; set; }
+
+    private bool FileIsUploaded { get; set; }
+
+    List<Barcode> Barcodes = new List<Barcode>();
+    Barcode Barcode = new Barcode();
+
+    IBrowserFile File { get; set; }
+
+
+    private void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        File = e.GetMultipleFiles().FirstOrDefault();
+        fileNames.Add(File.Name);
+    }
+
+    private async Task Clear()
+    {
+        Clearing = true;
+        fileNames.Clear();
+        ClearDragClass();
+        await Task.Delay(100);
+        Clearing = false;
+    }
+
+    private void SetDragClass()
+    {
+        DragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+
+    private void ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+
+    private async Task Upload() //InputFileChangeEventArgs e
+    {
+        //Upload the files here
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add("TODO: Upload your files!", Severity.Normal);
+
+        StartTime = DateTime.Now.ToString();
+        isLoading = true;
+        StateHasChanged();
+        loadedFiles.Clear();
+        try
+            {
+                @* file = e.GetMultipleFiles(maxAllowedFiles).FirstOrDefault(); *@
+                file = File;
+
+                FileIsUploaded = true;
+                
+            }
+            catch (Exception ex)
+            {
+                FileIsUploaded = false;
+                Console.WriteLine($"File: {file.Name} Error: {ex.Message}");
+            }
+
+            if(FileIsUploaded && file.ContentType == "text/csv")
+            {
+                StreamReader reader = new StreamReader(file.OpenReadStream(maxFileSize));
+                
+                var count = 1;
+
+                var content = await reader.ReadToEndAsync();
+                var lines = content.Split("\n").Where(l => !l.StartsWith("BarcodeNo") && !String.IsNullOrEmpty(l)).ToArray();
+
+                Message = $"Gathering data from {file.Name}";
+
+                foreach(var line in lines.Where(l => !l.StartsWith("BarcodeNo"))) {
+                    
+                    var values = line.Split(",");
+                    
+                    Barcode.CompanyId = _stateContainer.Company.Id;
+                    Barcode.BarcodeNo = values[0];
+                    Barcode.ItemId = values[1];
+                    Barcode.UnitOfMeasure = values[2];
+
+                    Barcodes.Add(Barcode);
+                    Barcode = new Barcode();
+                }
+
+                if(Barcodes is not null)
+                {
+                    var barcodesCount = Barcodes.Count();
+
+                    foreach(var barcode in Barcodes)
+                    {
+                        count++;
+
+                        Message = $"Updating Barcode {count} of {barcodesCount}";
+                        Progress = Convert.ToInt16(((decimal)count / (decimal)barcodesCount) * 100).ToString();
+                        
+                        StateHasChanged();
+                        
+                        await _client.PostAsJsonAsync<Barcode>("api/barcodes", barcode);
+                    }
+                }
+
+
+            }
+            EndTime = DateTime.Now.ToString();
+            StateHasChanged();
+        Barcodes = null;
+        isLoading = false;
+    }
+}

@@ -79,6 +79,11 @@ public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
             entity.HasOne(e => e.Entity).WithMany().OnDelete(DeleteBehavior.Restrict);
         });
 
+        builder.Entity<CurrencyExchange>(entity =>
+        {
+            entity.HasOne(e => e.Company).WithMany().OnDelete(DeleteBehavior.Restrict);
+        });
+
         builder.Entity<UserStore>(entity =>
         {
             entity.HasOne(e => e.Store).WithMany().OnDelete(DeleteBehavior.Restrict);
@@ -111,7 +116,29 @@ public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
         builder.Entity<Item>(entity =>
         {
             entity.HasOne(e => e.Company).WithMany().OnDelete(DeleteBehavior.Restrict);
-            entity.HasOne(e => e.Subgroup).WithMany().OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.Subgroup).WithMany().OnDelete(DeleteBehavior.Restrict);
+            // entity.HasMany(e => e.SalesPrices).WithOne().HasForeignKey("ItemId").OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<SalesPrice>(entity =>
+        {
+            entity.HasOne(e => e.Item).WithMany(e => e.SalesPrices).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Store).WithMany().OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<Catalogue>(entity =>
+        {
+            entity.HasOne(e => e.Company).WithMany().OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<CatalogueSection>(entity =>
+        {
+            entity.HasOne(e => e.Catalogue).WithMany().OnDelete(DeleteBehavior.Restrict);
+        });
+        builder.Entity<CatalogueItem>(entity =>
+        {
+            entity.HasOne(e => e.CatalogueSection).WithMany().OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Item).WithMany().OnDelete(DeleteBehavior.Restrict);
         });
 
         builder.Entity<Division>(entity =>
@@ -168,12 +195,17 @@ public class ApplicationDbContext : ApiAuthorizationDbContext<ApplicationUser>
     public DbSet<Entity> Entity { get; set; }
     public DbSet<Store> Store { get; set; }
     public DbSet<UserStore> UserStore { get; set; }
+    public DbSet<CurrencyExchange> CurrencyExchange { get; set; }
+    public DbSet<SalesPrice> SalesPrice { get; set; }
     public DbSet<Division> Division { get; set; }
     public DbSet<Category> Category { get; set; }
     public DbSet<Subcategory> Subcategory { get; set; }
     public DbSet<Group> Group { get; set; }
     public DbSet<Subgroup> Subgroup { get; set; }
     public DbSet<Item> Item { get; set; }
+    public DbSet<Catalogue> Catalogue { get; set; }
+    public DbSet<CatalogueSection> CatalogueSection { get; set; }
+    public DbSet<CatalogueItem> CatalogueItem { get; set; }
     public DbSet<Barcode> Barcode { get; set; }
     public DbSet<Vendor> Vendor { get; set; }
     public DbSet<PurchaseHeader> PurchaseHeader { get; set; }

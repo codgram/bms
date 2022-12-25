@@ -34,6 +34,7 @@ public class ProductBase : ComponentBase
     public Item selectedItem1 = null;
 
     public Item Item = new Item();
+    public Item SelectedItem { get; set; }
     public HashSet<Item> selectedItems = new HashSet<Item>();
 
     public List<Item> Items = new List<Item>();
@@ -116,6 +117,11 @@ public class ProductBase : ComponentBase
             _snackBar.Add($"{error}", Severity.Error);
             
         }
+    }
+
+    public void SelectItem(Item item)
+    {
+        SelectedItem = item;
     }
 
     public void OnInValidSubmit() 

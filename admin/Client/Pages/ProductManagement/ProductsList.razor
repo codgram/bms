@@ -13,7 +13,7 @@
         <MudSpacer />
         <MudIconButton Icon="@Icons.Material.Outlined.Download" OnClick='Export' />
         <MudIconButton Icon="@Icons.Material.Outlined.Add" OnClick='@(() => _navigationManager.NavigateTo("pfm/items/add"))' />
-        <MudIconButton Icon="@Icons.Material.Outlined.Upload" data-bs-toggle="offcanvas" data-bs-target="#offcanvasWithBothOptions" aria-controls="offcanvasWithBothOptions" />
+        <MudIconButton Icon="@Icons.Material.Outlined.Upload" OnClick='@(() => _navigationManager.NavigateTo("pfm/items/upload"))'  />
         <MudIconButton Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" />
     </MudToolBar>
 </MudPaper>
@@ -29,6 +29,7 @@
         <MudTh><MudTableSortLabel SortLabel="subgroup" T="Item">Subgroup</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortLabel="code" T="Item">Code</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortLabel="brand" T="Item">Brand</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortLabel="name" T="Item">Name</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortLabel="description" T="Item">Description</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortLabel="size" T="Item">Size</MudTableSortLabel></MudTh>
         <MudTh><MudTableSortLabel SortLabel="vendor" T="Item">Vendor No</MudTableSortLabel></MudTh>
@@ -42,15 +43,19 @@
         <MudTd DataLabel="Subgroup">@context.Subgroup.Name</MudTd>
         <MudTd DataLabel="Code">@context.Code</MudTd>
         <MudTd DataLabel="Brand">@context.Brand</MudTd>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
         <MudTd DataLabel="Description">@context.Description</MudTd>
         <MudTd DataLabel="Size">@context.Size</MudTd>
         <MudTd DataLabel="Vendor">@context.Vendor.Code</MudTd>
         <MudTd DataLabel="Type">@context.Type</MudTd>
         <MudTd DataLabel="PurchaseUOM">@context.PurchaseUOM</MudTd>
         <MudTd DataLabel="Status">@context.Status</MudTd>
-        <MudTd DataLabel="Edit">
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick='@(() => _navigationManager.NavigateTo($"pfm/items/edit/{context.Id}"))'/>
-            <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" />
+        <MudTd Class="d-flex" DataLabel="Edit">
+            <MudIconButton Icon="@Icons.Material.Outlined.Edit" Color="Color.Inherit" OnClick='@(() => _navigationManager.NavigateTo($"pfm/items/edit/{context.Id}"))'/>
+            <MudIconButton Icon="@Icons.Material.Outlined.Delete" Color="Color.Inherit" OnClick="@(() => OnDeleteAsync(context.Id))" />
+            <MudMenu Icon="@Icons.Material.Outlined.MoreVert" Color="Color.Inherit" >
+                <MudMenuItem data-bs-toggle="offcanvas"  data-bs-target="#offCanvasItemDetails" aria-controls="offCanvasItemDetails" @onclick="@(() => SelectItem(context))">View Details</MudMenuItem>
+            </MudMenu>
         </MudTd>
     </RowTemplate>
     <NoRecordsContent>
@@ -79,6 +84,59 @@
   <div class="offcanvas-body">
     
     <h5>Coming Soon</h5>
+
+  </div>
+</div>
+
+
+<div class="offcanvas offcanvas-end" data-bs-scroll="true" tabindex="-1" id="offCanvasItemDetails" aria-labelledby="offCanvasItemDetailsLabel">
+  <div class="offcanvas-header">
+    <h5 class="offcanvas-title" id="offCanvasItemDetailsLabel">Item Details</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+
+    @if(SelectedItem is not null)
+    {
+        <h4 class="mt-5">Details</h4>
+        <hr class="my-1" />
+        <p><strong>Item No: </strong> @SelectedItem.Code</p>
+        <p><strong>Brand: </strong> @SelectedItem.Brand</p>
+        <p><strong>Description: </strong> @SelectedItem.Description</p>
+        <p><strong>Size: </strong> @SelectedItem.Size</p>
+        <p><strong>Base UOM: </strong> @SelectedItem.BaseUOM</p>
+        <p><strong>Purchase UOM: </strong> @SelectedItem.PurchaseUOM</p>
+        <p><strong>Transfer UOM: </strong> @SelectedItem.TransferUOM</p>
+        <p><strong>Vendor: </strong>@SelectedItem.Vendor.Code - @SelectedItem.Vendor.Name</p>
+
+
+        <h4 class="mt-5">Hierarchy</h4>
+        <hr class="my-1" />
+        <p><strong>Division: </strong> @SelectedItem.Subgroup.Group.Category.Division.Code - @SelectedItem.Subgroup.Group.Category.Division.Name</p>
+        <p><strong>Category: </strong>  @SelectedItem.Subgroup.Group.Category.Code - @SelectedItem.Subgroup.Group.Category.Name</p>
+        <p><strong>Group: </strong>  @SelectedItem.Subgroup.Group.Code - @SelectedItem.Subgroup.Group.Name</p>
+        <p><strong>Subgroup: </strong> @SelectedItem.Subgroup.Code - @SelectedItem.Subgroup.Name</p>
+
+        <!--Divider-->
+        <h4 class="mt-5">Prices</h4>
+        <hr class="my-1" />
+
+        @if(SelectedItem.SalesPrices.Count() > 0)
+        {
+            <p><strong>Sales Price: </strong> @SelectedItem.SalesPrices.First().Price @SelectedItem.SalesPrices.First().Currency</p>
+        }
+        
+
+
+
+    }
+
+
+    
+
+    
+
+
 
   </div>
 </div>

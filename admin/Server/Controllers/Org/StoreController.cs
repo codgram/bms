@@ -29,9 +29,9 @@ namespace Application.Server.Controllers.Org
 
         // GET: api/Store
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Store>>> GetStore()
+        public async Task<ActionResult<IEnumerable<Store>>> GetStores([FromQuery] string companyId)
         {
-            return await _context.Store.Include(s => s.Entity).OrderBy(s => s.Entity.Code).ThenBy(s => s.Code).ToListAsync();
+            return await _context.Store.Include(s => s.Entity).Where(s => s.Entity.CompanyId == companyId).OrderBy(s => s.Entity.Code).ThenBy(s => s.Code).ToListAsync();
         }
 
         // GET: api/Store/5

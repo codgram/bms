@@ -1,0 +1,294 @@
+@page "/pfm/items/upload"
+@using Microsoft.Extensions.Logging
+@using System.Net.Http.Headers
+@inject HttpClient _client
+@inject StateContainer _stateContainer
+@inject ISnackbar Snackbar
+
+
+
+
+<MudPaper @ondragenter="@SetDragClass" @ondragleave="@ClearDragClass" @ondragend="@ClearDragClass" Height="300px" Outlined="true" Class="@DragClass">
+    @if (!Clearing)
+    {
+        <InputFile OnChange="OnInputFileChanged" multiple  class="absolute mud-width-full mud-height-full overflow-hidden z-2" style="opacity:0;" />
+    }
+    <MudText Typo="Typo.h6">Drag and drop files here or click</MudText>
+    @foreach (var file in fileNames)
+    {
+        <MudChip Color="Color.Dark" Text="@file" />
+    }
+</MudPaper>
+<MudToolBar DisableGutters="true" Class="gap-4">
+    <MudButton OnClick="Upload" Disabled="@(!fileNames.Any())" Color="Color.Primary" Variant="Variant.Filled">Upload</MudButton>
+    <MudButton OnClick="Clear" Disabled="@(!fileNames.Any())" Color="Color.Error" Variant="Variant.Filled">Clear</MudButton>
+</MudToolBar>
+
+@if (isLoading)
+{
+    <p>@Message</p>
+    <div class="progress">
+        <div class="progress-bar" role="progressbar" style='@($"width: {Progress}%;")' aria-valuenow="@Progress" aria-valuemin="0" aria-valuemax="100">@Progress %</div>
+    </div>
+}
+
+
+@code {
+
+    private bool Clearing = false;
+    private static string DefaultDragClass = "relative rounded-lg border-2 border-dashed pa-4 mt-4 mud-width-full mud-height-full";
+    private string DragClass = DefaultDragClass;
+    private List<string> fileNames = new List<string>();
+
+
+    private string Message { get; set; } = "";
+    private string Progress { get; set; } = "";
+    private string StartTime { get; set; }    
+    private string EndTime { get; set; }    
+
+    private List<IBrowserFile> loadedFiles = new();
+    private IBrowserFile file {get; set;}
+    private long maxFileSize = 1024 * 10000;
+    private int maxAllowedFiles = 3;
+    private bool isLoading;
+    private StreamContent fileContent { get; set; }
+
+    private bool FileIsUploaded { get; set; }
+
+    List<Item> Items = new List<Item>();
+    Item Item = new Item();
+
+    IBrowserFile File { get; set; }
+
+
+    private void OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        File = e.GetMultipleFiles().FirstOrDefault();
+        fileNames.Add(File.Name);
+    }
+
+    private async Task Clear()
+    {
+        Clearing = true;
+        fileNames.Clear();
+        ClearDragClass();
+        await Task.Delay(100);
+        Clearing = false;
+    }
+
+    private void SetDragClass()
+    {
+        DragClass = $"{DefaultDragClass} mud-border-primary";
+    }
+
+    private void ClearDragClass()
+    {
+        DragClass = DefaultDragClass;
+    }
+
+    private async Task Upload() //InputFileChangeEventArgs e
+    {
+        //Upload the files here
+        Snackbar.Configuration.PositionClass = Defaults.Classes.Position.TopCenter;
+        Snackbar.Add("TODO: Upload your files!", Severity.Normal);
+
+        StartTime = DateTime.Now.ToString();
+        isLoading = true;
+        StateHasChanged();
+        loadedFiles.Clear();
+        try
+            {
+                @* file = e.GetMultipleFiles(maxAllowedFiles).FirstOrDefault(); *@
+                file = File;
+
+                FileIsUploaded = true;
+                
+            }
+            catch (Exception ex)
+            {
+                FileIsUploaded = false;
+                Console.WriteLine($"File: {file.Name} Error: {ex.Message}");
+            }
+
+            if(FileIsUploaded && file.ContentType == "text/csv")
+            {
+                var stores = await _client.GetFromJsonAsync<List<Store>>($"api/store?companyId={_stateContainer.Company.Id}");
+                var store = stores.FirstOrDefault(s => s.Type == StoreType.Online || s.Type == StoreType.Both);
+                StreamReader reader = new StreamReader(file.OpenReadStream(maxFileSize));
+                
+                var count = 1;
+
+                var content = await reader.ReadToEndAsync();
+                var lines = content.Split("\n").Where(l => !l.StartsWith("ItemNo") && !String.IsNullOrEmpty(l)).ToArray();
+
+                Message = $"Gathering data from {file.Name}";
+
+                // select catalogueId column
+                var catalogueCode = lines.First().Split(",")[14];
+                var catalogueType = lines.First().Split(",")[15];
+                var catalogueSections = lines.Select(l => l.Split(",")[16]).Distinct().ToArray();
+
+                HttpResponseMessage request;
+
+                var catalogueSectionsList = new List<CatalogueSection>();
+
+                if(!String.IsNullOrEmpty(catalogueCode))
+                {
+
+                    // create catalogue
+                    var catalogue = new Catalogue
+                    {
+                        CompanyId = _stateContainer.Company.Id,
+                        Code = catalogueCode,
+                        Name = catalogueCode,
+                        // TODO: convert catalogue type to enum
+                        Type = CatalogueType.Menu,
+                        Description = catalogueCode
+                    };
+
+                    request = await _client.PostAsJsonAsync("api/catalogues", catalogue);
+
+                    // get catalogueId from the request
+                    var response = await request.Content.ReadFromJsonAsync<Catalogue>();
+
+                                    
+                
+                    // create catalogue sections
+                    foreach (var section in catalogueSections.Where(c => !String.IsNullOrEmpty(c) && c != "null" && c != "NULL" && c != "0"))
+                    {
+                        var catalogueSection = new CatalogueSection
+                        {
+                            CatalogueId = response.Id,
+                            Name = section,
+                            NormalizedName = section.ToUpper(),
+                            Description = section
+                        };
+
+                        var sectionRequest = await _client.PostAsJsonAsync("api/catalogueSections", catalogueSection);
+                        var sectionResponse = await sectionRequest.Content.ReadFromJsonAsync<CatalogueSection>();
+
+                        catalogueSectionsList.Add(sectionResponse);
+                    }
+
+                }
+
+
+                foreach(var line in lines.Where(l => !l.StartsWith("ItemNo"))) {
+                    
+                    var values = line.Split(",");
+                    
+                    Item.CompanyId = _stateContainer.Company.Id;
+                    Item.Code = values[0];
+                    Item.SubgroupId = values[1];
+                    Item.VendorId = values[2];
+                    Item.Type = Item.ConvertStringToItemType(values[3]);
+                    Item.Name = values[4];
+                    if(!String.IsNullOrEmpty(values[5])) {
+                        Item.Brand = values[5];
+                    }
+                    if(!String.IsNullOrEmpty(values[6])) {
+                        Item.Description = values[6];
+                    } 
+                    if(!String.IsNullOrEmpty(values[7])) {
+                        Item.Size = values[7];
+                    } 
+                    if(!String.IsNullOrEmpty(values[8])) {
+                        Item.BaseUOM = values[8];
+                    } 
+                    if(!String.IsNullOrEmpty(values[9])) {
+                        Item.PurchaseUOM = values[9];
+                    } 
+                    if(!String.IsNullOrEmpty(values[10])) {
+                        Item.TransferUOM = values[10];
+                    } 
+                    if(!String.IsNullOrEmpty(values[11])) {
+                        Item.Tag = values[11];
+                    }
+
+                    // convert to bool
+                    if(!String.IsNullOrEmpty(values[12])) {
+                        Item.HasVariant = values[12] == "1" ? true : false;
+                    }
+
+                    if(!String.IsNullOrEmpty(values[13]))
+                    {
+                        Item.Status = Item.ConvertStringToItemStatus(values[13]);
+                    }
+
+                    if(!String.IsNullOrEmpty(values[17]))
+                    {
+                        Item.SalesPrice = Convert.ToDecimal(values[17]);
+                    }
+
+                    
+
+                    Items.Add(Item);
+                    Item = new Item();
+                }
+
+                if(Items is not null)
+                {
+                    var itemsCount = Items.Count();
+
+                    foreach(var item in Items)
+                    {
+                        count++;
+
+                        Message = $"Updating Item {count} of {itemsCount}";
+                        Progress = Convert.ToInt16(((decimal)count / (decimal)itemsCount) * 100).ToString();
+                        
+                        StateHasChanged();
+                        
+                        
+                        request = await _client.PostAsJsonAsync<Item>("api/items", item);
+                        var response = await request.Content.ReadFromJsonAsync<Item>();
+                        Console.WriteLine($"Item: {item.Code}: {item.SalesPrice}");
+                        Console.WriteLine($"Item: {item.Code}: {response.Id}");
+                        Console.WriteLine($"Item: {item.Code}: {item.BaseUOM}");
+                        Console.WriteLine($"Item: {item.Code}: {store.Id}");
+
+                        // update the item price
+                        if(item.SalesPrice > 0)
+                        {
+                            var salesPrice = new SalesPrice()
+                            {
+                                ItemId = response.Id,
+                                Price = item.SalesPrice,
+                                StoreId = store.Id,
+                                UnitOfMeasure = item.BaseUOM,
+                            };
+
+                            await _client.PostAsJsonAsync<SalesPrice>("api/salesPrices", salesPrice);
+                        }
+
+
+                        var line = lines.FirstOrDefault(l => l.StartsWith(item.Code)).Split(",");
+
+                        var catalogueSectionName = line[16];
+                        // create catalogueItem
+                        var catalogueItem = new CatalogueItem
+                        {
+                            ItemId = response.Id,
+                            CatalogueSectionId = catalogueSectionsList.FirstOrDefault(s => s.Name == catalogueSectionName).Id
+                        };
+                        
+                        await _client.PostAsJsonAsync<CatalogueItem>("api/catalogueItems", catalogueItem);
+
+
+                    }
+                }
+
+
+            }
+            else
+            {
+                Message = "File is not a CSV file";
+            }
+
+            EndTime = DateTime.Now.ToString();
+            StateHasChanged();
+        Items = null;
+        isLoading = false;
+    }
+}
