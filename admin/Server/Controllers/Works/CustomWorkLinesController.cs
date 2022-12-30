@@ -169,7 +169,7 @@ namespace Application.Server.Controllers.Works
 
             // var headers = typeof(CustomWorkLine).GetProperties().Select(property => property.Name).ToArray();
 
-            var headers = new string[] { "Barcode", "Item No", "Description", "Size", "Quantity"};
+            var headers = new string[] { "Barcode", "Item No", "Description", "Size", "Expiry Date",  "Quantity"};
 
             for(int i = 0; i < headers.Length; i++)
             {
@@ -184,6 +184,7 @@ namespace Application.Server.Controllers.Works
                 sb.Append(i.ItemNo + ",");
                 sb.Append(!String.IsNullOrEmpty(i.Description) ? i.Description.Replace(",", "") : "" + ",");
                 sb.Append(i.Size+ ",");
+                sb.Append(i.ExpiryDate + ",");
                 sb.Append(i.Quantity + ",");
                 sb.Append("\r\n");
             }
